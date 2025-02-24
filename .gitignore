@@ -5,11 +5,14 @@
 *.vos
 *.vok
 *.vo.aux
+*.vio
 .*.aux
 *.bak
 .[ln]ia.cache
 .DS_Store
 *.fuse_*
+
+.direnv
 
 ## Shamelessly copied from github gitignore
 ## Core latex/pdflatex auxiliary files:
