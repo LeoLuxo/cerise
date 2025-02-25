@@ -15,8 +15,6 @@ Local Coercion Z.of_nat : nat >-> Z.
 *)
 
 Definition RegNum: nat := 31.
-Definition MemNum: Z := 2000000.
-Global Opaque MemNum.
 
 (* ---------------------------------- Registers ----------------------------------------*)
 
@@ -207,24 +205,43 @@ Proof.
   - intros rr _. rewrite elem_of_dom. apply Hfull.
 Qed.
 
+
+
+
+
+Definition MemNumPhys: Z := 2000000.
+Definition MemNumVirt: Z := MemNumPhys.
+
+Lemma phys_fits_in_virt :
+  (MemNumPhys <= MemNumVirt)%Z.
+Proof.
+  unfold MemNumVirt.
+  unfold MemNumPhys.
+  solve_finz.
+Qed.
+
+Global Opaque MemNumVirt.
+Global Opaque MemNumPhys.
+
+
 (* -------------------------------- Physical Memory addresses -----------------------------------*)
 
-Notation PhysAddr := (finz MemNum).
+Notation PhysAddr := (finz MemNumPhys).
 Declare Scope PhysAddr_scope.
 Delimit Scope PhysAddr_scope with a.
 
-Notation "a1 <= a2 < a3" := (@finz.le_lt MemNum a1 a2 a3) : PhysAddr_scope.
-Notation "a1 <= a2" := (@finz.le MemNum a1 a2) : PhysAddr_scope.
-Notation "a1 <=? a2" := (@finz.leb MemNum a1 a2) : PhysAddr_scope.
-Notation "a1 < a2" := (@finz.lt MemNum a1 a2) : PhysAddr_scope.
-Notation "a1 <? a2" := (@finz.ltb MemNum a1 a2) : PhysAddr_scope.
-Notation "a1 + z" := (@finz.incr MemNum a1 z) : PhysAddr_scope.
-Notation "a ^+ off" := (@finz.incr_default MemNum a off) (at level 50) : PhysAddr_scope.
+Notation "a1 <= a2 < a3" := (@finz.le_lt MemNumPhys a1 a2 a3) : PhysAddr_scope.
+Notation "a1 <= a2" := (@finz.le MemNumPhys a1 a2) : PhysAddr_scope.
+Notation "a1 <=? a2" := (@finz.leb MemNumPhys a1 a2) : PhysAddr_scope.
+Notation "a1 < a2" := (@finz.lt MemNumPhys a1 a2) : PhysAddr_scope.
+Notation "a1 <? a2" := (@finz.ltb MemNumPhys a1 a2) : PhysAddr_scope.
+Notation "a1 + z" := (@finz.incr MemNumPhys a1 z) : PhysAddr_scope.
+Notation "a ^+ off" := (@finz.incr_default MemNumPhys a off) (at level 50) : PhysAddr_scope.
 
-Notation z_to_phys_addr := (@finz.of_z MemNum).
-Notation z_of_phys_addr := (@finz.to_z MemNum).
+Notation z_to_phys_addr := (@finz.of_z MemNumPhys).
+Notation z_of_phys_addr := (@finz.to_z MemNumPhys).
 
-Notation za := (@finz.FinZ MemNum 0%Z eq_refl eq_refl).
+Notation za := (@finz.FinZ MemNumPhys 0%Z eq_refl eq_refl).
 Notation top_phys := (finz.largest za : PhysAddr).
 Notation "0" := (za) : PhysAddr_scope.
 
@@ -237,34 +254,64 @@ Global Open Scope general_if_scope.
 
 (* -------------------------------- Virtual Memory addresses -----------------------------------*)
 
-Notation VirtAddr := (finz MemNum).
+
+
+Notation VirtAddr := (finz MemNumVirt).
 Declare Scope VirtAddr_scope.
 Delimit Scope VirtAddr_scope with v.
 
-Notation "v1 <= v2 < v3" := (@finz.le_lt MemNum v1 v2 v3) : VirtAddr_scope.
-Notation "v1 <= v2" := (@finz.le MemNum v1 v2) : VirtAddr_scope.
-Notation "v1 <=? v2" := (@finz.leb MemNum v1 v2) : VirtAddr_scope.
-Notation "v1 < v2" := (@finz.lt MemNum v1 v2) : VirtAddr_scope.
-Notation "v1 <? v2" := (@finz.ltb MemNum v1 v2) : VirtAddr_scope.
-Notation "v1 + z" := (@finz.incr MemNum v1 z) : VirtAddr_scope.
-Notation "v ^+ off" := (@finz.incr_default MemNum v off) (at level 50) : VirtAddr_scope.
+Notation "v1 <= v2 < v3" := (@finz.le_lt MemNumVirt v1 v2 v3) : VirtAddr_scope.
+Notation "v1 <= v2" := (@finz.le MemNumVirt v1 v2) : VirtAddr_scope.
+Notation "v1 <=? v2" := (@finz.leb MemNumVirt v1 v2) : VirtAddr_scope.
+Notation "v1 < v2" := (@finz.lt MemNumVirt v1 v2) : VirtAddr_scope.
+Notation "v1 <? v2" := (@finz.ltb MemNumVirt v1 v2) : VirtAddr_scope.
+Notation "v1 + z" := (@finz.incr MemNumVirt v1 z) : VirtAddr_scope.
+Notation "v ^+ off" := (@finz.incr_default MemNumVirt v off) (at level 50) : VirtAddr_scope.
 
-Notation z_to_virt_addr := (@finz.of_z MemNum).
-Notation z_of_virt_addr := (@finz.to_z MemNum).
+Notation z_to_virt_addr := (@finz.of_z MemNumVirt).
+Notation z_of_virt_addr := (@finz.to_z MemNumVirt).
 
-Notation zv := (@finz.FinZ MemNum 0%Z eq_refl eq_refl).
+Notation zv := (@finz.FinZ MemNumVirt 0%Z eq_refl eq_refl).
 Notation top_virt := (finz.largest zv : VirtAddr).
 Notation "0" := (zv) : VirtAddr_scope.
 
-Notation eqb_addr := (λ (a1 a2: VirtAddr), Z.eqb a1 a2).
-Notation "a1 =? a2" := (eqb_addr a1 a2) : VirtAddr_scope.
+Notation eqb_addr := (λ (v1 v2: VirtAddr), Z.eqb v1 v2).
+Notation "v1 =? v2" := (eqb_addr v1 v2) : VirtAddr_scope.
 
 Notation virt_addr_incr_eq := (finz_incr_eq).
 
 Global Open Scope general_if_scope.
 
-(* Temporarily virtual and physical addresses are a 1-to-1 mapping *)
-Notation virt_to_phys := (λ (v: VirtAddr), z_to_phys_addr (z_of_virt_addr v)).
+(* -------------------------------- Address convertion -----------------------------------*)
+
+(* TEMPORARILY: virtual and physical addresses are a 1-to-1 mapping *)
+Definition virt_to_phys := (λ (v: VirtAddr), z_to_phys_addr (z_of_virt_addr v)).
+
+(* Coerce physical addresses to virtual so we don't need to copy-paste all the lemmas *)
+(* Definition phys_to_virt := (λ (a: PhysAddr), z_to_virt_addr (z_of_phys_addr a)). *)
+(* Definition phys_to_virt (a : PhysAddr) : VirtAddr.
+ (* := z_to_virt_addr (z_of_phys_addr a). *)
+ Proof.
+ destruct (z_of_phys_addr a).
+ - auto.
+ - admit.
+ -  *)
+  
+
+(*
+Definition coerce_phys_to_virt (a : PhysAddr) : VirtAddr.
+Proof.
+  (* apply (@finz.of_z MemNumVirt). *)
+(* destruct (Z.lt_dec a MemNumPhys),(Z.le_dec 0%Z a). *)
+  
+  destruct (phys_to_virt a).
+  - exact f.
+  - exact None.
+  - exact None. *)
+
+(* Coercion phys_to_virt : PhysAddr >-> VirtAddr. *)
+
+
 
 (* ---------------------------------- OTypes ----------------------------------------*)
 
