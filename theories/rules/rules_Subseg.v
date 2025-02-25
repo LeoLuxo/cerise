@@ -13,7 +13,7 @@ Section cap_lang_rules.
   Implicit Types v : cap_lang.val.
   Implicit Types w : Word.
   Implicit Types reg : gmap RegName Word.
-  Implicit Types ms : gmap Addr Word.
+  Implicit Types ms : gmap PhysAddr Word.
 
   Inductive Subseg_failure  (regs: Reg) (dst: RegName) (src1 src2: Z + RegName) : Reg → Prop :=
   | Subseg_fail_allowed w :

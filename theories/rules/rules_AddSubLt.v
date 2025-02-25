@@ -16,7 +16,7 @@ Section cap_lang_rules.
   Implicit Types v : cap_lang.val. 
   Implicit Types w : Word.
   Implicit Types reg : gmap RegName Word.
-  Implicit Types ms : gmap Addr Word.
+  Implicit Types ms : gmap PhysAddr Word.
 
   Definition denote (i: instr) (n1 n2: Z): Z :=
     match i with

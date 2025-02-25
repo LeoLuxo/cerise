@@ -12,7 +12,7 @@ Section cap_lang_spec_rules.
   Implicit Types r : RegName.
   Implicit Types w : Word.
   Implicit Types reg : gmap RegName Word.
-  Implicit Types ms : gmap Addr Word.
+  Implicit Types ms : gmap PhysAddr Word.
 
   Lemma step_AddSubLt Ep K i pc_p pc_b pc_e pc_a w dst arg1 arg2 regs :
     decodeInstrW w = i →

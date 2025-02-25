@@ -14,7 +14,7 @@ Section cap_lang_rules.
   Implicit Types v : cap_lang.val.
   Implicit Types w : Word.
   Implicit Types reg : gmap RegName Word.
-  Implicit Types ms : gmap Addr Word.
+  Implicit Types ms : gmap PhysAddr Word.
 
   Inductive Restrict_failure (regs: Reg) (dst: RegName) (src: Z + RegName) :=
   | Restrict_fail_src_nonz:
@@ -190,7 +190,7 @@ Section cap_lang_rules.
   Lemma wp_restrict_success_reg_PC Ep pc_p pc_b pc_e pc_a pc_a' w rv z:
     decodeInstrW w = Restrict PC (inr rv) →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-    (pc_a + 1)%a = Some pc_a' →
+    (pc_a + 1)%va = Some pc_a' →
     PermFlowsTo (decodePerm z) pc_p = true →
 
      {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
@@ -227,7 +227,7 @@ Section cap_lang_rules.
    Lemma wp_restrict_success_reg Ep pc_p pc_b pc_e pc_a pc_a' w r1 rv p b e a z :
      decodeInstrW w = Restrict r1 (inr rv) →
      isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-     (pc_a + 1)%a = Some pc_a' →
+     (pc_a + 1)%va = Some pc_a' →
      PermFlowsTo (decodePerm z) p = true →
      p ≠ E →
 
@@ -265,7 +265,7 @@ Section cap_lang_rules.
    Lemma wp_restrict_success_z_PC Ep pc_p pc_b pc_e pc_a pc_a' w z :
      decodeInstrW w = Restrict PC (inl z) →
      isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-     (pc_a + 1)%a = Some pc_a' →
+     (pc_a + 1)%va = Some pc_a' →
      PermFlowsTo (decodePerm z) pc_p = true →
 
      {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
@@ -300,7 +300,7 @@ Section cap_lang_rules.
    Lemma wp_restrict_success_z Ep pc_p pc_b pc_e pc_a pc_a' w r1 p b e a z :
      decodeInstrW w = Restrict r1 (inl z) →
      isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-     (pc_a + 1)%a = Some pc_a' →
+     (pc_a + 1)%va = Some pc_a' →
      PermFlowsTo (decodePerm z) p = true →
      p ≠ E →
 
@@ -340,7 +340,7 @@ Section cap_lang_rules.
  Lemma wp_restrict_success_reg_sr Ep pc_p pc_b pc_e pc_a pc_a' w r1 rv p b e a z :
      decodeInstrW w = Restrict r1 (inr rv) →
      isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-     (pc_a + 1)%a = Some pc_a' →
+     (pc_a + 1)%va = Some pc_a' →
      SealPermFlowsTo (decodeSealPerms z) p = true →
 
      {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
@@ -376,7 +376,7 @@ Section cap_lang_rules.
    Lemma wp_restrict_success_z_sr Ep pc_p pc_b pc_e pc_a pc_a' w r1 p b e a z :
      decodeInstrW w = Restrict r1 (inl z) →
      isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-     (pc_a + 1)%a = Some pc_a' →
+     (pc_a + 1)%va = Some pc_a' →
      SealPermFlowsTo (decodeSealPerms z) p = true →
 
      {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a

@@ -15,7 +15,7 @@ Section cap_lang_rules.
   Implicit Types v : cap_lang.val.
   Implicit Types w : Word.
   Implicit Types reg : gmap RegName Word.
-  Implicit Types ms : gmap Addr Word.
+  Implicit Types ms : gmap PhysAddr Word.
 
   Inductive Jnz_spec (regs: Reg) (dst src: RegName) : Reg → cap_lang.val → Prop :=
   | Jnz_spec_failure w:

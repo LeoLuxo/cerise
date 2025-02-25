@@ -15,7 +15,7 @@ Section cap_lang_rules.
   Implicit Types v : cap_lang.val.
   Implicit Types w : Word.
   Implicit Types reg : gmap RegName Word.
-  Implicit Types ms : gmap Addr Word.
+  Implicit Types ms : gmap PhysAddr Word.
 
   Definition reg_allows_store (regs : Reg) (r : RegName) p b e a :=
     regs !! r = Some (WCap p b e a) ∧

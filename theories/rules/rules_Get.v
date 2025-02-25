@@ -10,13 +10,13 @@ Section cap_lang_rules.
   Implicit Types P Q : iProp Σ.
   Implicit Types σ : ExecConf.
   Implicit Types c : cap_lang.expr.
-  Implicit Types a b : Addr.
+  Implicit Types a b : VirtAddr.
   Implicit Types o : OType.
   Implicit Types r : RegName.
   Implicit Types v : cap_lang.val.
   Implicit Types w : Word.
   Implicit Types reg : gmap RegName Word.
-  Implicit Types ms : gmap Addr Word.
+  Implicit Types ms : gmap PhysAddr Word.
 
   (* Generalized denote function, since multiple cases result in similar success *)
   Definition denote (i: instr) (w : Word): option Z :=
@@ -74,7 +74,7 @@ Section cap_lang_rules.
   Qed.
 
   (* Simpler definition, easier to use when proving wp-rules *)
-  Definition denote_cap (i: instr) (p : Perm) (b e a : Addr): Z :=
+  Definition denote_cap (i: instr) (p : Perm) (b e a : VirtAddr): Z :=
       match i with
       | GetP _ _ => (encodePerm p)
       | GetB _ _ => b
@@ -199,7 +199,7 @@ Section cap_lang_rules.
     decodeInstrW w = get_i →
     is_Get get_i dst PC →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-    (pc_a + 1)%a = Some pc_a' ->
+    (pc_a + 1)%va = Some pc_a' ->
     denote get_i (WCap pc_p pc_b pc_e pc_a) = Some z →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
@@ -230,7 +230,7 @@ Section cap_lang_rules.
     decodeInstrW w = get_i →
     is_Get get_i r r →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-    (pc_a + 1)%a = Some pc_a' ->
+    (pc_a + 1)%va = Some pc_a' ->
     denote get_i wr = Some z →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
@@ -261,7 +261,7 @@ Section cap_lang_rules.
     decodeInstrW w = get_i →
     is_Get get_i dst src →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-    (pc_a + 1)%a = Some pc_a' ->
+    (pc_a + 1)%va = Some pc_a' ->
     denote get_i wsrc = Some z →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a

@@ -14,7 +14,7 @@ Section cap_lang_rules.
   Implicit Types v : cap_lang.val.
   Implicit Types w : Word.
   Implicit Types reg : gmap RegName Word.
-  Implicit Types ms : gmap Addr Word.
+  Implicit Types ms : gmap PhysAddr Word.
 
   Inductive Lea_failure (regs: Reg) (r1: RegName) (rv: Z + RegName) :=
   | Lea_fail_rv_nonconst :
@@ -27,12 +27,12 @@ Section cap_lang_rules.
   | Lea_fail_overflow_cap : forall p b e a z,
      regs !! r1 = Some (WCap p b e a) ->
      z_of_argument regs rv = Some z ->
-     (a + z)%a = None ->
+     (a + z)%va = None ->
      Lea_failure regs r1 rv
   | Lea_fail_overflow_PC_cap : forall p b e a z a',
      regs !! r1 = Some (WCap p b e a) ->
      z_of_argument regs rv = Some z ->
-     (a + z)%a = Some a' ->
+     (a + z)%va = Some a' ->
      incrementPC (<[ r1 := WCap p b e a' ]> regs) = None ->
      Lea_failure regs r1 rv
   | Lea_fail_overflow_sr : forall p b e a z,
@@ -56,7 +56,7 @@ Section cap_lang_rules.
     regs !! r1 = Some (WCap p b e a) ->
     p ≠ E ->
     z_of_argument regs rv = Some z ->
-    (a + z)%a = Some a' ->
+    (a + z)%va = Some a' ->
     incrementPC
       (<[ r1 := WCap p b e a' ]> regs) = Some regs' ->
     Lea_spec regs r1 rv regs' NextIV
@@ -133,7 +133,7 @@ Section cap_lang_rules.
      + destruct (perm_eq_dec p E); [ subst p |].
        { rewrite /is_mutable_range in Hr1v; congruence. }
 
-       destruct (a + argz)%a as [ a' |] eqn:Hoffset; cycle 1.
+       destruct (a + argz)%va as [ a' |] eqn:Hoffset; cycle 1.
        { (* Failure: offset is too large *)
          assert (c = Failed ∧ σ2 = (r, m)) as (-> & ->)
              by (destruct p; inversion Hstep; auto).
@@ -206,8 +206,8 @@ Section cap_lang_rules.
    Lemma wp_lea_success_reg_PC Ep pc_p pc_b pc_e pc_a pc_a' w rv z a' :
      decodeInstrW w = Lea PC (inr rv) →
      isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-     (a' + 1)%a = Some pc_a' →
-     (pc_a + z)%a = Some a' →
+     (a' + 1)%va = Some pc_a' →
+     (pc_a + z)%va = Some a' →
      pc_p ≠ E →
 
      {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
@@ -244,8 +244,8 @@ Section cap_lang_rules.
    Lemma wp_lea_success_reg Ep pc_p pc_b pc_e pc_a pc_a' w r1 rv p b e a z a' :
      decodeInstrW w = Lea r1 (inr rv) →
      isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-     (pc_a + 1)%a = Some pc_a' →
-     (a + z)%a = Some a' →
+     (pc_a + 1)%va = Some pc_a' →
+     (a + z)%va = Some a' →
      p ≠ E →
 
      {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
@@ -286,8 +286,8 @@ Section cap_lang_rules.
    Lemma wp_lea_success_z_PC Ep pc_p pc_b pc_e pc_a pc_a' w z a' :
      decodeInstrW w = Lea PC (inl z) →
      isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-     (a' + 1)%a = Some pc_a' →
-     (pc_a + z)%a = Some a' →
+     (a' + 1)%va = Some pc_a' →
+     (pc_a + z)%va = Some a' →
      pc_p ≠ E →
 
      {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
@@ -320,8 +320,8 @@ Section cap_lang_rules.
    Lemma wp_lea_success_z Ep pc_p pc_b pc_e pc_a pc_a' w r1 p b e a z a' :
      decodeInstrW w = Lea r1 (inl z) →
      isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-     (pc_a + 1)%a = Some pc_a' →
-     (a + z)%a = Some a' →
+     (pc_a + 1)%va = Some pc_a' →
+     (a + z)%va = Some a' →
      p ≠ E →
 
      {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
@@ -361,7 +361,7 @@ Section cap_lang_rules.
    Lemma wp_lea_success_reg_sr Ep pc_p pc_b pc_e pc_a pc_a' w r1 rv p b e a z a' :
      decodeInstrW w = Lea r1 (inr rv) →
      isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-     (pc_a + 1)%a = Some pc_a' →
+     (pc_a + 1)%va = Some pc_a' →
      (a + z)%ot = Some a' →
 
      {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
@@ -401,7 +401,7 @@ Section cap_lang_rules.
   Lemma wp_lea_success_z_sr Ep pc_p pc_b pc_e pc_a pc_a' w r1 p b e a z a' :
      decodeInstrW w = Lea r1 (inl z) →
      isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-     (pc_a + 1)%a = Some pc_a' →
+     (pc_a + 1)%va = Some pc_a' →
      (a + z)%ot = Some a' →
 
      {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
@@ -438,7 +438,7 @@ Section cap_lang_rules.
    Lemma wp_Lea_fail_none Ep pc_p pc_b pc_e pc_a w r1 rv p b e a z :
      decodeInstrW w = Lea r1 (inr rv) →
      isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-     (a + z)%a = None ->
+     (a + z)%va = None ->
 
      {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
            ∗ ▷ pc_a ↦ₐ w

@@ -13,7 +13,7 @@ Section cap_lang_spec_rules.
   Implicit Types r : RegName.
   Implicit Types w : Word.
   Implicit Types reg : gmap RegName Word.
-  Implicit Types ms : gmap Addr Word.
+  Implicit Types ms : gmap PhysAddr Word.
 
   Ltac iFailStep_alt fail_type :=
     iMod (exprspec_pointsto_update _ _ (fill _ (Instr Failed)) with "Hown Hj") as "[Hown Hj]";

@@ -482,7 +482,7 @@ Section cap_lang_spec_rules.
   Implicit Types r : RegName.
   Implicit Types w : Word.
   Implicit Types reg : gmap RegName Word.
-  Implicit Types ms : gmap Addr Word.
+  Implicit Types ms : gmap PhysAddr Word.
 
   Lemma spec_step_bind K e σ κ e' σ' :
     base_step e σ κ e' σ' [] ->
@@ -568,7 +568,7 @@ Section cap_lang_spec_rules.
   Implicit Types r : RegName.
   Implicit Types w : Word.
   Implicit Types reg : gmap RegName Word.
-  Implicit Types ms : gmap Addr Word.
+  Implicit Types ms : gmap PhysAddr Word.
 
   (* ----------------------------- Fail and Halt --------------------------------- *)
 

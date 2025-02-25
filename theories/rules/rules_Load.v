@@ -10,18 +10,18 @@ Section cap_lang_rules.
   Implicit Types P Q : iProp Σ.
   Implicit Types σ : ExecConf.
   Implicit Types c : cap_lang.expr.
-  Implicit Types a b : Addr.
+  Implicit Types a b : VirtAddr.
   Implicit Types r : RegName.
   Implicit Types v : cap_lang.val.
   Implicit Types w : Word.
   Implicit Types reg : gmap RegName Word.
-  Implicit Types ms : gmap Addr Word.
+  Implicit Types ms : gmap PhysAddr Word.
 
   Definition reg_allows_load (regs : Reg) (r : RegName) p b e a  :=
     regs !! r = Some (WCap p b e a) ∧
     readAllowed p = true ∧ withinBounds b e a = true.
 
-  Inductive Load_failure (regs: Reg) (r1 r2: RegName) (mem : gmap Addr Word) :=
+  Inductive Load_failure (regs: Reg) (r1 r2: RegName) (mem : gmap PhysAddr Word) :=
   | Load_fail_const w:
       regs !! r2 = Some w ->
       is_cap w = false →
@@ -40,7 +40,7 @@ Section cap_lang_rules.
 
   Inductive Load_spec
     (regs: Reg) (r1 r2: RegName)
-    (regs': Reg) (mem : gmap Addr Word) : cap_lang.val → Prop
+    (regs': Reg) (mem : gmap PhysAddr Word) : cap_lang.val → Prop
   :=
   | Load_spec_success p b e a loadv :
     reg_allows_load regs r2 p b e a →
@@ -53,14 +53,14 @@ Section cap_lang_rules.
     Load_failure regs r1 r2 mem ->
     Load_spec regs r1 r2 regs' mem FailedV.
 
-  Definition allow_load_map_or_true r (regs : Reg) (mem : gmap Addr Word):=
+  Definition allow_load_map_or_true r (regs : Reg) (mem : gmap PhysAddr Word):=
     ∃ p b e a, read_reg_inr regs r p b e a ∧
       if decide (reg_allows_load regs r p b e a) then
         ∃ w, mem !! a = Some w
       else True.
 
   Lemma allow_load_implies_loadv:
-    ∀ (r2 : RegName) (mem0 : gmap Addr Word) (r : Reg) (p : Perm) (b e a : Addr),
+    ∀ (r2 : RegName) (mem0 : gmap PhysAddr Word) (r : Reg) (p : Perm) (b e a : VirtAddr),
       allow_load_map_or_true r2 r mem0
       → r !! r2 = Some (WCap p b e a)
       → readAllowed p = true

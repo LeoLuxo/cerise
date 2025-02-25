@@ -15,7 +15,7 @@ Section cap_lang_rules.
   Implicit Types v : cap_lang.val.
   Implicit Types w : Word.
   Implicit Types reg : gmap RegName Word.
-  Implicit Types ms : gmap Addr Word.
+  Implicit Types ms : gmap PhysAddr Word.
 
   Lemma wp_jmp_success E pc_p pc_b pc_e pc_a w r w' :
     decodeInstrW w = Jmp r →
