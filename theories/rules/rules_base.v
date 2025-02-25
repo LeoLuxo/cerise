@@ -7,7 +7,7 @@ From cap_machine Require Export cap_lang iris_extra stdpp_extra.
 (* CMRΑ for memory *)
 Class memG Σ := MemG {
   mem_invG : invGS Σ;
-  mem_gen_memG :: gen_heapGS Addr Word Σ}.
+  mem_gen_memG :: gen_heapGS PhysAddr Word Σ}.
 
 (* CMRA for registers *)
 Class regG Σ := RegG {
@@ -30,9 +30,9 @@ Notation "r ↦ᵣ{ q } w" := (pointsto (L:=RegName) (V:=Word) r q w)
 Notation "r ↦ᵣ w" := (pointsto (L:=RegName) (V:=Word) r (DfracOwn 1) w) (at level 20) : bi_scope.
 
 (* Points to predicates for memory *)
-Notation "a ↦ₐ{ q } w" := (pointsto (L:=Addr) (V:=Word) a q w)
+Notation "a ↦ₐ{ q } w" := (pointsto (L:=PhysAddr) (V:=Word) a q w)
   (at level 20, q at level 50, format "a  ↦ₐ{ q }  w") : bi_scope.
-Notation "a ↦ₐ w" := (pointsto (L:=Addr) (V:=Word) a (DfracOwn 1) w) (at level 20) : bi_scope.
+Notation "a ↦ₐ w" := (pointsto (L:=PhysAddr) (V:=Word) a (DfracOwn 1) w) (at level 20) : bi_scope.
 
 (* --------------------------- LTAC DEFINITIONS ----------------------------------- *)
 
@@ -55,12 +55,12 @@ Section cap_lang_rules.
   Implicit Types P Q : iProp Σ.
   Implicit Types σ : ExecConf.
   Implicit Types c : cap_lang.expr.
-  Implicit Types a b : Addr.
+  Implicit Types a b : VirtAddr.
   Implicit Types r : RegName.
   Implicit Types v : cap_lang.val.
   Implicit Types w : Word.
   Implicit Types reg : gmap RegName Word.
-  Implicit Types ms : gmap Addr Word.
+  Implicit Types ms : gmap PhysAddr Word.
 
 
   (* Conditionally unify on the read register value *)
@@ -287,11 +287,11 @@ Section cap_lang_rules.
   (* -------------- predicates on memory maps -------------------------- *)
 
   Lemma extract_sep_if_split a pc_a P Q R:
-     (if (a =? pc_a)%a then P else Q ∗ R)%I ≡
-     ((if (a =? pc_a)%a then P else Q) ∗
-     if (a =? pc_a)%a then emp else R)%I.
+     (if (a =? pc_a)%va then P else Q ∗ R)%I ≡
+     ((if (a =? pc_a)%va then P else Q) ∗
+     if (a =? pc_a)%va then emp else R)%I.
   Proof.
-    destruct (a =? pc_a)%a; auto.
+    destruct (a =? pc_a)%va; auto.
     iSplit; auto. iIntros "[H1 H2]"; auto.
   Qed.
 
@@ -301,7 +301,7 @@ Section cap_lang_rules.
     by rewrite big_sepM_empty.
   Qed.
 
-  Lemma memMap_resource_1 (a : Addr) (w : Word)  :
+  Lemma memMap_resource_1 (a : PhysAddr) (w : Word)  :
         a ↦ₐ w  ⊣⊢ ([∗ map] a↦w ∈ <[a:=w]> ∅, a ↦ₐ w)%I.
   Proof.
     rewrite big_sepM_delete; last by apply lookup_insert.
@@ -311,7 +311,7 @@ Section cap_lang_rules.
     - by iDestruct "HH" as "[HH _]".
   Qed.
 
-  Lemma memMap_resource_1_dq (a : Addr) (w : Word) dq :
+  Lemma memMap_resource_1_dq (a : PhysAddr) (w : Word) dq :
         a ↦ₐ{dq} w  ⊣⊢ ([∗ map] a↦w ∈ <[a:=w]> ∅, a ↦ₐ{dq} w)%I.
   Proof.
     rewrite big_sepM_delete; last by apply lookup_insert.
@@ -321,7 +321,7 @@ Section cap_lang_rules.
     - by iDestruct "HH" as "[HH _]".
   Qed.
 
-  Lemma memMap_resource_2ne (a1 a2 : Addr) (w1 w2 : Word)  :
+  Lemma memMap_resource_2ne (a1 a2 : PhysAddr) (w1 w2 : Word)  :
     a1 ≠ a2 → ([∗ map] a↦w ∈  <[a1:=w1]> (<[a2:=w2]> ∅), a ↦ₐ w)%I ⊣⊢ a1 ↦ₐ w1 ∗ a2 ↦ₐ w2.
   Proof.
     intros.
@@ -342,7 +342,7 @@ Section cap_lang_rules.
     iExFalso. iApply (addr_dupl_false with "[$Ha1] [$Ha2]").
   Qed.
 
-  Lemma memMap_resource_2ne_apply (a1 a2 : Addr) (w1 w2 : Word)  :
+  Lemma memMap_resource_2ne_apply (a1 a2 : PhysAddr) (w1 w2 : Word)  :
     a1 ↦ₐ w1 -∗ a2 ↦ₐ w2 -∗ ([∗ map] a↦w ∈  <[a1:=w1]> (<[a2:=w2]> ∅), a ↦ₐ w) ∗ ⌜a1 ≠ a2⌝.
   Proof.
     iIntros "Hi Hr2a".
@@ -351,14 +351,14 @@ Section cap_lang_rules.
     iApply memMap_resource_2ne; auto. iSplitL "Hi"; auto.
   Qed.
 
-  Lemma memMap_resource_2gen (a1 a2 : Addr) (w1 w2 : Word)  :
+  Lemma memMap_resource_2gen (a1 a2 : PhysAddr) (w1 w2 : Word)  :
     ( ∃ mem, ([∗ map] a↦w ∈ mem, a ↦ₐ w) ∧
-       ⌜ if  (a2 =? a1)%a
+       ⌜ if  (a2 =? a1)%pa
        then mem =  (<[a1:=w1]> ∅)
        else mem = <[a1:=w1]> (<[a2:=w2]> ∅)⌝
-    )%I ⊣⊢ (a1 ↦ₐ w1 ∗ if (a2 =? a1)%a then emp else a2 ↦ₐ w2) .
+    )%I ⊣⊢ (a1 ↦ₐ w1 ∗ if (a2 =? a1)%pa then emp else a2 ↦ₐ w2) .
   Proof.
-    destruct (a2 =? a1)%a eqn:Heq.
+    destruct (a2 =? a1)%pa eqn:Heq.
     - apply Z.eqb_eq, finz_to_z_eq in Heq. rewrite memMap_resource_1.
       iSplit.
       * iDestruct 1 as (mem) "[HH ->]".  by iSplit.
@@ -370,34 +370,34 @@ Section cap_lang_rules.
       * iDestruct 1 as "Hmap". iExists (<[a1:=w1]> (<[a2:=w2]> ∅)); iSplitL; auto.
   Qed.
 
-  Lemma memMap_resource_2gen_d (Φ : Addr → Word → iProp Σ) (a1 a2 : Addr) (w1 w2 : Word)  :
-    ( ∃ mem, ([∗ map] a↦w ∈ mem, Φ a w) ∧
-       ⌜ if  (a2 =? a1)%a
+  Lemma memMap_resource_2gen_d (Φ : PhysAddr → Word → iProp Σ) (a1 a2 : PhysAddr) (w1 w2 : Word)  :
+    ( ∃ mem, ([∗ map] (a: PhysAddr)↦w ∈ mem, Φ a w) ∧
+       ⌜ if  (a2 =? a1)%pa
        then mem =  (<[a1:=w1]> ∅)
        else mem = <[a1:=w1]> (<[a2:=w2]> ∅)⌝
-    ) -∗ (Φ a1 w1 ∗ if (a2 =? a1)%a then emp else Φ a2 w2) .
+    ) -∗ (Φ a1 w1 ∗ if (a2 =? a1)%pa then emp else Φ a2 w2).
   Proof.
     iIntros "Hmem". iDestruct "Hmem" as (mem) "[Hmem Hif]".
-    destruct ((a2 =? a1)%a) eqn:Heq.
+    destruct ((a2 =? a1)%pa) eqn:Heq.
     - iDestruct "Hif" as %->.
       iDestruct (big_sepM_insert with "Hmem") as "[$ Hmem]". auto.
     - iDestruct "Hif" as %->. iDestruct (big_sepM_insert with "Hmem") as "[$ Hmem]".
-      { rewrite lookup_insert_ne;auto. apply Z.eqb_neq in Heq. solve_addr. }
+      { rewrite lookup_insert_ne; auto. apply Z.eqb_neq in Heq. solve_addr. }
       iDestruct (big_sepM_insert with "Hmem") as "[$ Hmem]". auto.
   Qed.
 
-  Lemma memMap_resource_2gen_d_dq (Φ : Addr → dfrac → Word → iProp Σ) (a1 a2 : Addr) (dq1 dq2 : dfrac) (w1 w2 : Word)  :
-    ( ∃ mem dfracs, ([∗ map] a↦wq ∈ prod_merge dfracs mem, Φ a wq.1 wq.2) ∧
-       ⌜ (if  (a2 =? a1)%a
+  Lemma memMap_resource_2gen_d_dq (Φ : PhysAddr → dfrac → Word → iProp Σ) (a1 a2 : PhysAddr) (dq1 dq2 : dfrac) (w1 w2 : Word)  :
+    ( ∃ mem dfracs, ([∗ map] (a:PhysAddr)↦wq ∈ prod_merge dfracs mem, Φ a wq.1 wq.2) ∧
+       ⌜ (if  (a2 =? a1)%pa
        then mem =  (<[a1:=w1]> ∅)
           else mem = <[a1:=w1]> (<[a2:=w2]> ∅)) ∧
-       (if  (a2 =? a1)%a
+       (if  (a2 =? a1)%pa
        then dfracs = (<[a1:=dq1]> ∅)
        else dfracs = <[a1:=dq1]> (<[a2:=dq2]> ∅))⌝
-    ) -∗ (Φ a1 dq1 w1 ∗ if (a2 =? a1)%a then emp else Φ a2 dq2 w2) .
+    ) -∗ (Φ a1 dq1 w1 ∗ if (a2 =? a1)%pa then emp else Φ a2 dq2 w2) .
   Proof.
     iIntros "Hmem". iDestruct "Hmem" as (mem dfracs) "[Hmem [Hif Hif'] ]".
-    destruct ((a2 =? a1)%a) eqn:Heq.
+    destruct ((a2 =? a1)%pa) eqn:Heq.
     - iDestruct "Hif" as %->. iDestruct "Hif'" as %->.
       rewrite /prod_merge -(insert_merge _ _ _ _ (dq1,w1));auto. rewrite merge_empty.
       iDestruct (big_sepM_insert with "Hmem") as "[$ Hmem]". auto.
@@ -412,17 +412,17 @@ Section cap_lang_rules.
 
 
   (* Not the world's most beautiful lemma, but it does avoid us having to fiddle around with a later under an if in proofs *)
-  Lemma memMap_resource_2gen_clater (a1 a2 : Addr) (w1 w2 : Word) (Φ : Addr -> Word -> iProp Σ)  :
+  Lemma memMap_resource_2gen_clater (a1 a2 : PhysAddr) (w1 w2 : Word) (Φ : PhysAddr -> Word -> iProp Σ)  :
     (▷ Φ a1 w1) -∗
-    (if (a2 =? a1)%a then emp else ▷ Φ a2 w2) -∗
+    (if (a2 =? a1)%pa then emp else ▷ Φ a2 w2) -∗
     (∃ mem, ▷ ([∗ map] a↦w ∈ mem, Φ a w) ∗
-       ⌜if  (a2 =? a1)%a
+       ⌜if  (a2 =? a1)%pa
        then mem =  (<[a1:=w1]> ∅)
        else mem = <[a1:=w1]> (<[a2:=w2]> ∅)⌝
     )%I.
   Proof.
     iIntros "Hc1 Hc2".
-    destruct (a2 =? a1)%a eqn:Heq.
+    destruct (a2 =? a1)%pa eqn:Heq.
     - iExists (<[a1:= w1]> ∅); iSplitL; auto. iNext. iApply big_sepM_insert;[|by iFrame].
       auto.
     - iExists (<[a1:=w1]> (<[a2:=w2]> ∅)); iSplitL; auto.
@@ -432,20 +432,20 @@ Section cap_lang_rules.
       iApply big_sepM_insert;[|by iFrame]. auto.
   Qed.
 
-  Lemma memMap_resource_2gen_clater_dq (a1 a2 : Addr) (dq1 dq2 : dfrac) (w1 w2 : Word) (Φ : Addr -> dfrac → Word -> iProp Σ)  :
+  Lemma memMap_resource_2gen_clater_dq (a1 a2 : PhysAddr) (dq1 dq2 : dfrac) (w1 w2 : Word) (Φ : PhysAddr -> dfrac → Word -> iProp Σ)  :
     (▷ Φ a1 dq1 w1) -∗
-    (if (a2 =? a1)%a then emp else ▷ Φ a2 dq2 w2) -∗
+    (if (a2 =? a1)%pa then emp else ▷ Φ a2 dq2 w2) -∗
     (∃ mem dfracs, ▷ ([∗ map] a↦wq ∈ prod_merge dfracs mem, Φ a wq.1 wq.2) ∗
-       ⌜(if  (a2 =? a1)%a
+       ⌜(if  (a2 =? a1)%pa
        then mem = (<[a1:=w1]> ∅)
        else mem = <[a1:=w1]> (<[a2:=w2]> ∅)) ∧
-       (if  (a2 =? a1)%a
+       (if  (a2 =? a1)%pa
        then dfracs = (<[a1:=dq1]> ∅)
        else dfracs = <[a1:=dq1]> (<[a2:=dq2]> ∅))⌝
     )%I.
   Proof.
     iIntros "Hc1 Hc2".
-    destruct (a2 =? a1)%a eqn:Heq.
+    destruct (a2 =? a1)%pa eqn:Heq.
     - iExists (<[a1:= w1]> ∅),(<[a1:= dq1]> ∅); iSplitL; auto. iNext.
       rewrite /prod_merge -(insert_merge _ _ _ _ (dq1,w1));auto. rewrite merge_empty.
       iApply big_sepM_insert;[|by iFrame].
@@ -461,7 +461,7 @@ Section cap_lang_rules.
   Qed.
 
   Lemma memMap_delete:
-    ∀(a : Addr) (w : Word) mem0,
+    ∀(a : PhysAddr) (w : Word) mem0,
       mem0 !! a = Some w →
       ([∗ map] a↦w ∈ mem0, a ↦ₐ w) ⊣⊢ (a ↦ₐ w ∗ ([∗ map] k↦y ∈ delete a mem0, k ↦ₐ y)).
   Proof.
@@ -495,7 +495,7 @@ Section cap_lang_rules.
   Qed.
 
   Lemma gen_mem_valid_inSepM:
-    ∀ mem0 (m : Mem) (a : Addr) (w : Word),
+    ∀ mem0 (m : Mem) (a : PhysAddr) (w : Word),
       mem0 !! a = Some w →
       gen_heap_interp m
                    -∗ ([∗ map] a↦w ∈ mem0, a ↦ₐ w)
@@ -508,7 +508,7 @@ Section cap_lang_rules.
 
   (* a more general version of load to work also with any fraction and persistent points tos *)
   Lemma gen_mem_valid_inSepM_general:
-    ∀ mem0 (m : Mem) (a : Addr) (w : Word) dq,
+    ∀ mem0 (m : Mem) (a : PhysAddr) (w : Word) dq,
       mem0 !! a = Some (dq,w) →
       gen_heap_interp m
                    -∗ ([∗ map] a↦dqw ∈ mem0, pointsto a dqw.1 dqw.2)
@@ -520,8 +520,8 @@ Section cap_lang_rules.
   Qed.
 
   Lemma gen_mem_update_inSepM :
-    ∀ {Σ : gFunctors} {gen_heapG0 : gen_heapGS Addr Word Σ}
-      (σ : gmap Addr Word) mem0 (l : Addr) (v' v : Word),
+    ∀ {Σ : gFunctors} {gen_heapG0 : gen_heapGS PhysAddr Word Σ}
+      (σ : gmap PhysAddr Word) mem0 (l : PhysAddr) (v' v : Word),
       mem0 !! l = Some v' →
       gen_heap_interp σ
       -∗ ([∗ map] a↦w ∈ mem0, a ↦ₐ w)
@@ -580,7 +580,7 @@ Section cap_lang_rules.
   Qed.
 
   Lemma wp_notCorrectPC_range E pc_p pc_b pc_e pc_a :
-       ¬ (pc_b <= pc_a < pc_e)%a →
+       ¬ (pc_b <= pc_a < pc_e)%va →
       {{{ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a}}}
       Instr Executable @ E
       {{{ RET FailedV; True }}}.
@@ -740,7 +740,7 @@ Qed.
 Definition incrementPC (regs: Reg) : option Reg :=
   match regs !! PC with
   | Some (WCap p b e a) =>
-    match (a + 1)%a with
+    match (a + 1)%va with
     | Some a' => Some (<[ PC := WCap p b e a' ]> regs)
     | None => None
     end
@@ -751,25 +751,25 @@ Lemma incrementPC_Some_inv regs regs' :
   incrementPC regs = Some regs' ->
   exists p b e a a',
     regs !! PC = Some (WCap p b e a) ∧
-    (a + 1)%a = Some a' ∧
+    (a + 1)%va = Some a' ∧
     regs' = <[ PC := WCap p b e a' ]> regs.
 Proof.
   unfold incrementPC.
   destruct (regs !! PC) as [ [ | [? ? ? u | ] | ] | ];
     try congruence.
-  case_eq (u+1)%a; try congruence. intros ? ?. inversion 1.
+  case_eq (u+1)%va; try congruence. intros ? ?. inversion 1.
   do 5 eexists. split; eauto.
 Qed.
 
 Lemma incrementPC_None_inv regs pg b e a :
   incrementPC regs = None ->
   regs !! PC = Some (WCap pg b e a) ->
-  (a + 1)%a = None.
+  (a + 1)%va = None.
 Proof.
   unfold incrementPC.
   destruct (regs !! PC) as [ [ | [? ? ? u | ] | ] |];
     try congruence.
-  case_eq (u+1)%a; congruence.
+  case_eq (u+1)%va; congruence.
 Qed.
 
 Lemma incrementPC_overflow_mono regs regs' :
@@ -781,7 +781,7 @@ Proof.
   intros Hi HPC Hincl. unfold incrementPC in *. destruct HPC as [c HPC].
   pose proof (lookup_weaken _ _ _ _ HPC Hincl) as HPC'.
   rewrite HPC HPC' in Hi |- *. destruct c as [| [? ? ? aa | ] | ]; auto.
-  destruct (aa+1)%a; last by auto. congruence.
+  destruct (aa+1)%va; last by auto. congruence.
 Qed.
 
 (* todo: instead, define updatePC on top of incrementPC *)
@@ -792,21 +792,21 @@ Proof.
    rewrite /incrementPC /updatePC /=.
    destruct (regs !! PC) as [X|]; auto.
    destruct X as [| [? ? ? a' | ] |]; auto.
-   destruct (a' + 1)%a; auto. congruence.
+   destruct (a' + 1)%va; auto. congruence.
 Qed.
 
 Lemma incrementPC_success_updatePC regs m regs' :
   incrementPC regs = Some regs' ->
   ∃ p b e a a',
     regs !! PC = Some (WCap p b e a) ∧
-    (a + 1)%a = Some a' ∧
+    (a + 1)%va = Some a' ∧
     updatePC (regs, m) = Some (NextI, (<[ PC := WCap p b e a' ]> regs, m)) ∧
     regs' = <[ PC := WCap p b e a' ]> regs.
 Proof.
   rewrite /incrementPC /updatePC /update_reg /=.
   destruct (regs !! PC) as [X|] eqn:?; auto; try congruence; [].
   destruct X as [| [? ? ? a'|]|] eqn:?; try congruence; [].
-  destruct (a' + 1)%a eqn:?; [| congruence]. inversion 1; subst regs'.
+  destruct (a' + 1)%va eqn:?; [| congruence]. inversion 1; subst regs'.
   do 5 eexists. repeat split; auto.
 Qed.
 
@@ -819,7 +819,7 @@ Proof.
   destruct (regs !! PC) as [ w1 |] eqn:Hrr.
   { pose proof (lookup_weaken _ _ _ _ Hrr Hincl) as Hregs'. rewrite Hregs'.
     destruct w1 as [|[ ? ? ? a1|] | ]; simplify_eq.
-    destruct (a1 + 1)%a eqn:Ha1; simplify_eq. rewrite /update_reg /=.
+    destruct (a1 + 1)%va eqn:Ha1; simplify_eq. rewrite /update_reg /=.
     f_equal. f_equal.
     assert (HH: forall (reg1 reg2:Reg), reg1 = reg2 -> reg1 !! PC = reg2 !! PC)
       by (intros * ->; auto).
@@ -836,7 +836,7 @@ Proof.
   intros [w HPC] Hincl Hfail. rewrite /updatePC /= in Hfail |- *.
   rewrite !HPC in Hfail. have -> := lookup_weaken _ _ _ _ HPC Hincl.
   destruct w as [| [? ? ? a1 | ] |]; simplify_eq; auto;[].
-  destruct (a1 + 1)%a; simplify_eq; auto.
+  destruct (a1 + 1)%va; simplify_eq; auto.
 Qed.
 
 Ltac incrementPC_inv :=

@@ -21,13 +21,13 @@ Definition reg (ϕ: ExecConf) := fst ϕ.
 Definition mem (ϕ: ExecConf) := snd ϕ.
 
 Definition update_reg (φ: ExecConf) (r: RegName) (w: Word): ExecConf := (<[r:=w]>(reg φ),mem φ).
-Definition update_mem (φ: ExecConf) (a: Addr) (w: Word): ExecConf := (reg φ, <[a:=w]>(mem φ)).
+Definition update_mem (φ: ExecConf) (pa: PhysAddr) (w: Word): ExecConf := (reg φ, <[pa:=w]>(mem φ)).
 
 (* Note that the `None` values here also undo any previous changes that were tentatively made in the same step. This is more consistent across the board. *)
 Definition updatePC (φ: ExecConf): option Conf :=
   match (reg φ) !! PC with
   | Some (WCap p b e a) =>
-    match (a + 1)%a with
+    match (a + 1)%va with
     | Some a' => let φ' := (update_reg φ PC (WCap p b e a')) in
                 Some (NextI, φ')
     | None => None
@@ -127,23 +127,23 @@ Qed.
 
 Definition addr_of_argument regs src :=
   match z_of_argument regs src with
-  | Some n => z_to_addr n
+  | Some n => z_to_virt_addr n
   | None => None
   end.
 
-Lemma addr_of_argument_Some_inv (regs: Reg) (arg: Z + RegName) (a:Addr) :
+Lemma addr_of_argument_Some_inv (regs: Reg) (arg: Z + RegName) (a:VirtAddr) :
   addr_of_argument regs arg = Some a →
-  ∃ z, z_to_addr z = Some a ∧
+  ∃ z, z_to_virt_addr z = Some a ∧
        (arg = inl z ∨ ∃ r, arg = inr r ∧ regs !! r = Some (WInt z)).
 Proof.
   unfold addr_of_argument, z_of_argument.
   intro. repeat case_match; simplify_eq/=; eauto. eexists. eauto.
 Qed.
 
-Lemma addr_of_argument_Some_inv' (regs regs': Reg) (arg: Z + RegName) (a:Addr) :
+Lemma addr_of_argument_Some_inv' (regs regs': Reg) (arg: Z + RegName) (a:VirtAddr) :
   addr_of_argument regs arg = Some a →
   regs ⊆ regs' →
-  ∃ z, z_to_addr z = Some a ∧
+  ∃ z, z_to_virt_addr z = Some a ∧
        (arg = inl z ∨ ∃ r, arg = inr r ∧ regs !! r = Some (WInt z) ∧ regs' !! r = Some (WInt z)).
 Proof.
   unfold addr_of_argument, z_of_argument.
@@ -248,7 +248,7 @@ Section opsem.
       | WCap p b e a =>
         match p with
         | E => None
-        | _ => match (a + n)%a with
+        | _ => match (a + n)%va with
                | Some a' => updatePC (update_reg φ dst (WCap p b e a'))
                | None => None
                end

@@ -25,7 +25,7 @@ Definition permit_unseal (s : SealPerms) :=
   s.2.
 
 Inductive Sealable: Type :=
-| SCap: Perm -> Addr -> Addr -> Addr -> Sealable
+| SCap: Perm -> VirtAddr -> VirtAddr -> VirtAddr -> Sealable
 | SSealRange: SealPerms -> OType -> OType -> OType -> Sealable.
 
 (* Having different syntactic categories here simplifies the definition of instructions later, but requires some duplication in defining bounds changes and lea on sealing ranges *)
@@ -69,7 +69,7 @@ Coercion cst : Z >-> sum.
 (* Registers and memory: maps from register names/addresses to String.words *)
 
 Definition Reg := gmap RegName Word.
-Definition Mem := gmap Addr Word.
+Definition Mem := gmap PhysAddr Word.
 
 (* EqDecision instances *)
 
@@ -414,7 +414,7 @@ Qed.
 Definition isWithin {z} (n1 n2 b e: finz z) : bool :=
   ((b <=? n1) && (n2 <=? e))%f.
 
-Definition isWithinCap (c: Word) (b e: finz MemNum) : bool :=
+Definition isWithinCap (c: Word) (b e: finz MemNumVirt) : bool :=
   match c with
   | WCap _ n1 n2 _ => isWithin n1 n2 b e
   | _ => false
@@ -501,8 +501,8 @@ Qed.
 
 Inductive isCorrectPC: Word → Prop :=
 | isCorrectPC_intro:
-    forall p (b e a : Addr),
-      (b <= a < e)%a →
+    forall p (b e a : VirtAddr),
+      (b <= a < e)%va →
       p = RX \/ p = RWX →
       isCorrectPC (WCap p b e a).
 
@@ -527,7 +527,7 @@ Qed.
 Definition isCorrectPCb (w: Word): bool :=
   match w with
   | WCap p b e a =>
-    (b <=? a)%a && (a <? e)%a &&
+    (b <=? a)%va && (a <? e)%va &&
     (isPerm p RX || isPerm p RWX)
   | _ => false
   end.
@@ -554,7 +554,7 @@ Qed.
 
 Lemma isCorrectPC_ra_wb pc_p pc_b pc_e pc_a :
   isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-  readAllowed pc_p && ((pc_b <=? pc_a)%a && (pc_a <? pc_e)%a).
+  readAllowed pc_p && ((pc_b <=? pc_a)%va && (pc_a <? pc_e)%va).
 Proof.
   intros. inversion H; subst.
   - destruct H2. apply andb_prop_intro. split.
@@ -572,14 +572,14 @@ Proof.
 Qed.
 
 Lemma not_isCorrectPC_bounds p b e a :
- ¬ (b <= a < e)%a → ¬ isCorrectPC (WCap p b e a).
+ ¬ (b <= a < e)%va → ¬ isCorrectPC (WCap p b e a).
 Proof.
   intros Hbounds.
   intros Hvpc. inversion Hvpc.
   by exfalso.
 Qed.
 
-Lemma isCorrectPC_bounds p b e (a0 a1 a2 : Addr) :
+Lemma isCorrectPC_bounds p b e (a0 a1 a2 : VirtAddr) :
   isCorrectPC (WCap p b e a0) →
   isCorrectPC (WCap p b e a2) →
   (a0 ≤ a1 < a2)%Z → isCorrectPC (WCap p b e a1).
@@ -593,7 +593,7 @@ Proof.
       { apply Z.lt_trans with a2; auto. }
 Qed.
 
-Lemma isCorrectPC_bounds_alt p b e (a0 a1 a2 : Addr) :
+Lemma isCorrectPC_bounds_alt p b e (a0 a1 a2 : VirtAddr) :
   isCorrectPC (WCap p b e a0)
   → isCorrectPC (WCap p b e a2)
   → (a0 ≤ a1)%Z ∧ (a1 ≤ a2)%Z
@@ -615,7 +615,7 @@ Qed.
 
 Lemma isCorrectPC_le_addr p b e a :
   isCorrectPC (WCap p b e a) →
-  (b <= a)%a ∧ (a < e)%a.
+  (b <= a)%va ∧ (a < e)%va.
 Proof.
   intros HH. by eapply withinBounds_le_addr, isCorrectPC_withinBounds.
 Qed.
@@ -628,8 +628,8 @@ Qed.
 
 Lemma in_range_is_correctPC p b e a b' e' :
   isCorrectPC (WCap p b e a) →
-  (b' <= b)%a ∧ (e <= e')%a →
-  (b' <= a)%a ∧ (a < e')%a.
+  (b' <= b)%va ∧ (e <= e')%va →
+  (b' <= a)%va ∧ (a < e')%va.
 Proof.
   intros Hvpc [Hb He].
   inversion Hvpc; simplify_eq. solve_addr.
@@ -713,7 +713,8 @@ Proof.
 Qed.
 
 Global Instance word_inhabited: Inhabited Word := populate (WInt 0).
-Global Instance addr_inhabited: Inhabited Addr := populate (@finz.FinZ MemNum 0%Z eq_refl eq_refl).
+Global Instance phys_addr_inhabited: Inhabited PhysAddr := populate (@finz.FinZ MemNumPhys 0%Z eq_refl eq_refl).
+Global Instance virt_addr_inhabited: Inhabited VirtAddr := populate (@finz.FinZ MemNumVirt 0%Z eq_refl eq_refl).
 Global Instance otype_inhabited: Inhabited OType := populate (@finz.FinZ ONum 0%Z eq_refl eq_refl).
 
 Global Instance instr_countable : Countable instr.

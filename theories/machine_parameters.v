@@ -59,9 +59,9 @@ Definition encodeInstrsW `{MachineParameters} : list instr → list Word :=
   map encodeInstrW.
 
 Section word_type_encoding.
-  Definition wt_cap := WCap O 0%a 0%a 0%a.
+  Definition wt_cap := WCap O 0%va 0%va 0%va.
   Definition wt_sealrange := WSealRange (false, false) 0%ot 0%ot 0%ot.
-  Definition wt_sealed := WSealed 0%ot (SCap O 0%a 0%a 0%a).
+  Definition wt_sealed := WSealed 0%ot (SCap O 0%va 0%va 0%va).
   Definition wt_int := WInt 0.
 End word_type_encoding.
 

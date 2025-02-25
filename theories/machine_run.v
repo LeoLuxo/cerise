@@ -20,7 +20,7 @@ Fixpoint machine_run `{MachineParameters} (fuel: nat) (c: Conf): option ConfFlag
         if isCorrectPCb pc then (
           let a := match pc with
                   | WCap _ _ _ a => a
-                  | _ => top (* dummy *)
+                  | _ => top_virt (* dummy *)
                   end in
           match m !! a with
           | None => Some Failed

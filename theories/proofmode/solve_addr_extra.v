@@ -31,7 +31,14 @@ Global Ltac zify_finz_op_nonbranching_step_hook ::=
 From Coq Require Import ZArith.
 
 Goal forall d d' d'',
-  (d + 1)%a = Some d'' ->
-  (d + 2)%a = Some d' ->
+  (d + 1)%pa = Some d'' ->
+  (d + 2)%pa = Some d' ->
+  withinBounds d d' d'' = true.
+Proof. intros. solve_addr. Qed.
+
+
+Goal forall d d' d'',
+  (d + 1)%va = Some d'' ->
+  (d + 2)%va = Some d' ->
   withinBounds d d' d'' = true.
 Proof. intros. solve_addr. Qed.
