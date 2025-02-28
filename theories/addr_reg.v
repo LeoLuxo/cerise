@@ -251,20 +251,8 @@ Notation "a1 <? a2" := (finz_to_phys_addr' (@finz.ltb MemNumPhys (finz_of_phys_a
 Notation "a1 + z" := (finz_to_phys_addr' (@finz.incr MemNumPhys (finz_of_phys_addr a1) z)) : PhysAddr_scope.
 Notation "a ^+ off" := (finz_to_phys_addr (@finz.incr_default MemNumPhys (finz_of_phys_addr a) off)) (at level 50) : PhysAddr_scope.
 
-Definition z_to_phys_addr (z : Z) : option PhysAddr.
-Proof.
-  destruct (@finz.of_z MemNumPhys z).
-  - exact (Some (PhysAddrCons f)).
-  - exact None.
-Qed.
-
-Definition z_of_phys_addr (pa: PhysAddr): Z := 
-  match pa with
-  | PhysAddrCons f => @finz.to_z MemNumPhys f
-  end.
-
-Notation za_phys := (@finz.FinZ MemNumPhys 0%Z eq_refl eq_refl).
-Notation top_phys := (finz.largest za_phys : PhysAddr).
+Notation za_phys := (finz_to_phys_addr (@finz.FinZ MemNumPhys 0%Z eq_refl eq_refl)).
+Notation top_phys := (finz_to_phys_addr (finz.largest (@finz.FinZ MemNumPhys 0%Z eq_refl eq_refl))).
 Notation "0" := (za_phys) : PhysAddr_scope.
 
 Notation eqb_phys_addr := (λ (a1 a2: PhysAddr), Z.eqb a1 a2).
@@ -319,7 +307,7 @@ Global Open Scope general_if_scope.
 (* -------------------------------- Address convertion -----------------------------------*)
 
 (* TEMPORARILY: virtual and physical addresses are a 1-to-1 mapping *)
-Definition virt_to_phys (v: VirtAddr) : option PhysAddr :=  z_to_phys_addr (z_of_virt_addr v).
+(* Definition virt_to_phys (v: VirtAddr) : option PhysAddr :=  z_to_phys_addr (z_of_virt_addr v). *)
 
 (* Coerce physical addresses to virtual so we don't need to copy-paste all the lemmas *)
 (* Definition phys_to_virt := (λ (a: PhysAddr), z_to_virt_addr (z_of_phys_addr a)). *)

@@ -4,7 +4,27 @@ From cap_machine Require Import addr_reg.
 From machine_utils Require Import solve_finz.
 
 Ltac zify_addr := zify_finz.
-Tactic Notation "solve_addr" := solve_finz.
+
+Ltac unfold_addr := 
+  match goal with
+  | a : PhysAddr |- _ =>
+    induction a
+  | a : VirtAddr |- _ =>
+    induction a
+  end.
+
+Ltac solve_addr := 
+  repeat unfold_addr;
+  repeat zify_finz_op_goal_step;
+  simpl in *;
+  unfold finz_of_phys_addr in *;
+  unfold finz_to_phys_addr in *;
+  unfold finz_to_phys_addr' in *;
+  simpl in *;
+  repeat f_equal;
+  solve_finz.
+
+Tactic Notation "solve_addr" := solve_addr.
 Tactic Notation "solve_addr" "-" hyp_list(Hs) := clear Hs; solve_addr.
 Tactic Notation "solve_addr" "+" hyp_list(Hs) := clear -Hs; solve_addr.
 
@@ -13,36 +33,24 @@ Tactic Notation "solve_addr" "+" hyp_list(Hs) := clear -Hs; solve_addr.
 (** Physical Address arithmetic *)
 
 Lemma phys_addr_add_0 (a: PhysAddr): (a + 0)%pa = Some a.
-Proof. repeat zify_finz_op_goal_step; induction a; simpl in *; repeat f_equal; solve_finz.
-Qed.
-
- apply finz_of_phys_addr. solve_addr. Qed.
-
-simpl. induction a. cbn in *. unfold finz_to_phys_addr'. simpl. unfold finz.incr. solve_addr. simpl. induction a. simpl. destruct ((f + 0)%f) eqn:eqname. destruct  finz_to_phys_addr'.
-- f_equal. destruct p.
- induction (@finz.incr) eqn:eqname. 
--  admit.
--  solve_addr. Qed.
-
-(* Lemma phys_addr_add_0 (a: PhysAddr): (a + 0)%pa = Some a.
-Proof. apply finz_of_phys_addr. solve_addr. Qed. *)
+Proof. solve_addr. Qed.
 
 Lemma incr_phys_addr_one_none (a: PhysAddr) :
   (a + 1)%pa = None ->
   a = top_phys.
-Proof. solve_addr. Qed.
+Proof. intros. solve_addr. Qed.
 
 Lemma incr_phys_addr_opt_add_twice (a: PhysAddr) (n m: Z) :
   (0 <= n)%Z ->
   (0 <= m)%Z ->
   ((a ^+ n) ^+ m)%pa = (a ^+ (n + m)%Z)%pa.
-Proof. solve_addr. Qed.
+Proof. intros. solve_addr. Qed.
 
-Lemma incr_phys_addr_opt_add_twice' (a: PhysAddr) (n m: Z) :
+(* Lemma incr_phys_addr_opt_add_twice' (a: PhysAddr) (n m: Z) :
   (0 <= n)%Z ->
   (0 <= m)%Z ->
   ((a ^+ n) ^+ m)%pa = (a ^+ (n + m)%Z)%pa.
-Proof. zify_addr;[]. (* only one goal! *) lia. Qed.
+Proof. zify_addr;[]. (* only one goal! *) lia. Qed. *)
 
 Lemma phys_top_le_eq (a: PhysAddr) : (top_phys <= a)%pa → a = top_phys.
 Proof. solve_addr. Qed.
