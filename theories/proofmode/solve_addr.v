@@ -12,11 +12,23 @@ Tactic Notation "solve_addr" "+" hyp_list(Hs) := clear -Hs; solve_addr.
 
 (** Physical Address arithmetic *)
 
-Lemma phys_addr_add_0 (a: PhysAddr): (a + 0)%va = Some a.
-Proof. solve_addr. Qed.
+Lemma phys_addr_add_0 (a: PhysAddr): (a + 0)%pa = Some a.
+Proof. repeat zify_finz_op_goal_step; induction a; simpl in *; repeat f_equal; solve_finz.
+Qed.
+
+ apply finz_of_phys_addr. solve_addr. Qed.
+
+simpl. induction a. cbn in *. unfold finz_to_phys_addr'. simpl. unfold finz.incr. solve_addr. simpl. induction a. simpl. destruct ((f + 0)%f) eqn:eqname. destruct  finz_to_phys_addr'.
+- f_equal. destruct p.
+ induction (@finz.incr) eqn:eqname. 
+-  admit.
+-  solve_addr. Qed.
+
+(* Lemma phys_addr_add_0 (a: PhysAddr): (a + 0)%pa = Some a.
+Proof. apply finz_of_phys_addr. solve_addr. Qed. *)
 
 Lemma incr_phys_addr_one_none (a: PhysAddr) :
-  (a + 1)%va = None ->
+  (a + 1)%pa = None ->
   a = top_phys.
 Proof. solve_addr. Qed.
 

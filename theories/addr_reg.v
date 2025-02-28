@@ -215,18 +215,41 @@ Definition MemNumPhys: Z := 2000000.
 Global Opaque MemNumPhys.
 
 Inductive PhysAddr : Type := 
-  | PhysAddrCons (z : finz MemNumPhys).
+  | PhysAddrCons: (finz MemNumPhys) -> PhysAddr.
 
 Declare Scope PhysAddr_scope.
 Delimit Scope PhysAddr_scope with pa.
 
-Notation "a1 <= a2 < a3" := (@finz.le_lt MemNumPhys a1 a2 a3) : PhysAddr_scope.
+Definition finz_to_phys_addr: (finz MemNumPhys) -> PhysAddr := PhysAddrCons.
+
+Definition finz_to_phys_addr' (f : option (finz MemNumPhys)): option PhysAddr :=
+  match f with
+  | Some f => Some (PhysAddrCons f)
+  | None => None
+  end.
+
+Definition finz_of_phys_addr (pa: PhysAddr): finz MemNumPhys := 
+  match pa with
+  | PhysAddrCons f => f
+  end.
+
+(* Global Coercion finz_of_phys_addr : PhysAddr >-> finz. *)
+
+(* Notation "a1 <= a2 < a3" := (@finz.le_lt MemNumPhys a1 a2 a3) : PhysAddr_scope.
 Notation "a1 <= a2" := (@finz.le MemNumPhys a1 a2) : PhysAddr_scope.
 Notation "a1 <=? a2" := (@finz.leb MemNumPhys a1 a2) : PhysAddr_scope.
 Notation "a1 < a2" := (@finz.lt MemNumPhys a1 a2) : PhysAddr_scope.
 Notation "a1 <? a2" := (@finz.ltb MemNumPhys a1 a2) : PhysAddr_scope.
 Notation "a1 + z" := (@finz.incr MemNumPhys a1 z) : PhysAddr_scope.
-Notation "a ^+ off" := (@finz.incr_default MemNumPhys a off) (at level 50) : PhysAddr_scope.
+Notation "a ^+ off" := (@finz.incr_default MemNumPhys a off) (at level 50) : PhysAddr_scope. *)
+
+Notation "a1 <= a2 < a3" := (finz_to_phys_addr' (@finz.le_lt MemNumPhys (finz_of_phys_addr a1) (finz_of_phys_addr a2) (finz_of_phys_addr a3))) : PhysAddr_scope.
+Notation "a1 <= a2" := (finz_to_phys_addr' (@finz.le MemNumPhys (finz_of_phys_addr a1) (finz_of_phys_addr a2))) : PhysAddr_scope.
+Notation "a1 <=? a2" := (finz_to_phys_addr' (@finz.leb MemNumPhys (finz_of_phys_addr a1) (finz_of_phys_addr a2))) : PhysAddr_scope.
+Notation "a1 < a2" := (finz_to_phys_addr' (@finz.lt MemNumPhys (finz_of_phys_addr a1) (finz_of_phys_addr a2))) : PhysAddr_scope.
+Notation "a1 <? a2" := (finz_to_phys_addr' (@finz.ltb MemNumPhys (finz_of_phys_addr a1) (finz_of_phys_addr a2))) : PhysAddr_scope.
+Notation "a1 + z" := (finz_to_phys_addr' (@finz.incr MemNumPhys (finz_of_phys_addr a1) z)) : PhysAddr_scope.
+Notation "a ^+ off" := (finz_to_phys_addr (@finz.incr_default MemNumPhys (finz_of_phys_addr a) off)) (at level 50) : PhysAddr_scope.
 
 Definition z_to_phys_addr (z : Z) : option PhysAddr.
 Proof.
