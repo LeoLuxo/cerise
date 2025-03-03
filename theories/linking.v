@@ -10,12 +10,12 @@ Section Linking.
   Variable Symbols_countable: Countable Symbols.
 
   Variable Word: Type.
-  Variable can_address_only: Word -> (gset VirtAddr) -> Prop.
+  Variable can_address_only: Word -> (gset PhysAddr) -> Prop.
   Variable is_main: Word -> Prop.
 
-  Definition imports: Type := gset (Symbols * VirtAddr).
+  Definition imports: Type := gset (Symbols * PhysAddr).
   Definition exports: Type := gmap Symbols Word.
-  Definition segment: Type := gmap VirtAddr Word.
+  Definition segment: Type := gmap PhysAddr Word.
 
   Definition pre_component: Type := (segment * imports * exports).
   Inductive component: Type :=
@@ -24,12 +24,12 @@ Section Linking.
 
   Inductive well_formed_pre_comp: pre_component -> Prop :=
   | wf_pre_intro:
-      forall (ms : gmap VirtAddr Word) imp (exp : gmap Symbols Word)
+      forall (ms : gmap PhysAddr Word) imp (exp : gmap Symbols Word)
         (Hdisj: forall s, is_Some (exp !! s) -> ~ exists a, (s, a) ∈ imp)
         (Hexp: forall (s : Symbols) (w : Word), exp !! s = Some w -> can_address_only w (dom ms))
         (Himp: forall s a, (s, a) ∈ imp -> is_Some (ms !! a))
         (Himpdisj: forall s1 s2 a, (s1, a) ∈ imp -> (s2, a) ∈ imp -> s1 = s2)
-        (Hnpwl: forall (a : VirtAddr) (w : Word), ms !! a = Some w -> can_address_only w (dom ms)),
+        (Hnpwl: forall (a : PhysAddr) (w : Word), ms !! a = Some w -> can_address_only w (dom ms)),
         well_formed_pre_comp (ms, imp, exp).
 
   Inductive well_formed_comp: component -> Prop :=
@@ -65,7 +65,7 @@ Section Linking.
     intros imp exp ms a. eapply (set_fold_ind_L (fun m imp => (forall s1 s2 a, (s1, a) ∈ imp -> (s2, a) ∈ imp -> s1 = s2) -> ((~ exists s, (s, a) ∈ imp) -> m !! a = ms !! a) /\ (forall s, (s, a) ∈ imp -> (exp !! s = None /\ m !! a = ms !! a) \/ (exists wexp, exp !! s = Some wexp /\ m !! a = Some wexp))) (fun '(s, a) m => match exp !! s with Some w => <[a:=w]> m | None => m end)); eauto.
     { intros. split; auto. intros.
       eapply elem_of_empty in H0; elim H0; auto. }
-    intros. destruct x. split.
+    intros. destruct x as [s f]. split.
     { intros. destruct (exp !! s).
       - rewrite lookup_insert_ne; auto.
         + apply H0.
