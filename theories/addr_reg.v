@@ -208,11 +208,12 @@ Qed.
 
 
 
+
+
+
 (* -------------------------------- Physical Memory addresses -----------------------------------*)
 
-
 Definition MemNumPhys: Z := 2000000.
-Global Opaque MemNumPhys.
 
 Inductive PhysAddr : Type := 
   | PhysAddrCons: (finz MemNumPhys) -> PhysAddr.
@@ -288,9 +289,7 @@ Definition InBoundsPhys (b e f : PhysAddr):=
 
 (* -------------------------------- Virtual Memory addresses -----------------------------------*)
 
-
 Definition MemNumVirt: Z := MemNumPhys.
-Global Opaque MemNumVirt.
 
 Inductive VirtAddr : Type := 
   | VirtAddrCons: (finz MemNumVirt) -> VirtAddr.
@@ -365,32 +364,30 @@ Definition InBoundsVirt (b e f : VirtAddr):=
 
 (* -------------------------------- Address convertion -----------------------------------*)
 
-(* TEMPORARILY: virtual and physical addresses are a 1-to-1 mapping *)
-(* Definition virt_to_phys (v: VirtAddr) : option PhysAddr :=  z_to_phys_addr (z_of_virt_addr v). *)
-
-(* Coerce physical addresses to virtual so we don't need to copy-paste all the lemmas *)
-(* Definition phys_to_virt := (λ (a: PhysAddr), z_to_virt_addr (z_of_phys_addr a)). *)
-(* Definition phys_to_virt (a : PhysAddr) : VirtAddr.
- (* := z_to_virt_addr (z_of_phys_addr a). *)
- Proof.
- destruct (z_of_phys_addr a).
- - auto.
- - admit.
- -  *)
-  
-
-(*
-Definition coerce_phys_to_virt (a : PhysAddr) : VirtAddr.
+Local Lemma phys_fits_in_virt :
+  (MemNumPhys <= MemNumVirt)%Z.
 Proof.
-  (* apply (@finz.of_z MemNumVirt). *)
-(* destruct (Z.lt_dec a MemNumPhys),(Z.le_dec 0%Z a). *)
-  
-  destruct (phys_to_virt a).
-  - exact f.
-  - exact None.
-  - exact None. *)
+  unfold MemNumVirt.
+  unfold MemNumPhys.
+  lia.
+Qed.
 
-(* Coercion phys_to_virt : PhysAddr >-> VirtAddr. *)
+Global Opaque MemNumVirt.
+Global Opaque MemNumPhys.
+
+(* TEMPORARILY: virtual and physical addresses are a 1-to-1 mapping *)
+Definition TEMP_virt_to_phys (v: VirtAddr) : PhysAddr.
+Proof.
+  apply finz_to_phys_addr.
+  apply finz_of_virt_addr in v.
+  destruct v.
+  rewrite -> Z.ltb_lt in finz_lt.
+  apply Z.lt_le_trans with _ _ MemNumPhys in finz_lt.
+  - rewrite <- Z.ltb_lt in finz_lt.
+    exact (finz.FinZ z finz_lt finz_nonneg).
+  - exact phys_fits_in_virt.
+Qed.
+
 
 
 

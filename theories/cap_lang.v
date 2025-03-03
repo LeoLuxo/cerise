@@ -222,7 +222,7 @@ Section opsem.
       wsrc ← (reg φ) !! src;
       match wsrc with
       | WCap p b e a =>
-        if readAllowed p && withinBounds b e a then
+        if readAllowed p && withinBoundsVirt b e a then
           asrc ← (mem φ) !! a;
           updatePC (update_reg φ dst asrc)
         else None
@@ -233,8 +233,8 @@ Section opsem.
       wdst ← (reg φ) !! dst;
       match wdst with
       | WCap p b e a =>
-        if writeAllowed p && withinBounds b e a then
-          updatePC (update_mem φ a tostore)
+        if writeAllowed p && withinBoundsVirt b e a then
+          updatePC (update_mem φ (a) tostore)
         else None
       | _ => None
       end
