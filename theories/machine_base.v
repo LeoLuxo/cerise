@@ -367,6 +367,12 @@ Definition cap_size (w : Word) : Z :=
 Definition withinBounds {z} (b e a : finz z): bool :=
   (b <=? a)%f && (a <? e)%f.
 
+Definition withinBoundsPhys (b e a : PhysAddr): bool :=
+  withinBounds (finz_of_phys_addr b) (finz_of_phys_addr e) (finz_of_phys_addr a).
+
+Definition withinBoundsVirt (b e a : VirtAddr): bool :=
+  withinBounds (finz_of_virt_addr b) (finz_of_virt_addr e) (finz_of_virt_addr a).
+
 Lemma withinBounds_true_iff {z} (b e a : finz z) :
   withinBounds b e a = true ↔ (b <= a)%f ∧ (a < e)%f.
 Proof.
@@ -414,9 +420,15 @@ Qed.
 Definition isWithin {z} (n1 n2 b e: finz z) : bool :=
   ((b <=? n1) && (n2 <=? e))%f.
 
+Definition isWithinPhys (n1 n2 b e: PhysAddr) : bool :=
+  isWithin (finz_of_phys_addr n1) (finz_of_phys_addr n2) (finz_of_phys_addr b) (finz_of_phys_addr e).
+
+Definition isWithinVirt (n1 n2 b e: VirtAddr) : bool :=
+  isWithin (finz_of_virt_addr n1) (finz_of_virt_addr n2) (finz_of_virt_addr b) (finz_of_virt_addr e).
+
 Definition isWithinCap (c: Word) (b e: VirtAddr) : bool :=
   match c with
-  | WCap _ n1 n2 _ => isWithin (finz_of_virt_addr n1) (finz_of_virt_addr n2) (finz_of_virt_addr b) (finz_of_virt_addr e)
+  | WCap _ n1 n2 _ => isWithinVirt n1 n2 b e
   | _ => false
   end.
 
@@ -606,7 +618,7 @@ Qed.
 
 Lemma isCorrectPC_withinBounds p b e a :
   isCorrectPC (WCap p b e a) →
-  withinBounds (finz_of_virt_addr b) (finz_of_virt_addr e) (finz_of_virt_addr a) = true.
+  withinBoundsVirt b e a = true.
 Proof.
   intros HH. inversion HH; subst.
   rewrite /withinBounds !andb_true_iff Z.leb_le Z.ltb_lt. auto.
@@ -636,7 +648,7 @@ Qed.
 
 Lemma isCorrectPC_ExecPCPerm_InBounds p b e a :
   ExecPCPerm p →
-  InBounds (finz_of_virt_addr b) (finz_of_virt_addr e) (finz_of_virt_addr a) →
+  InBoundsVirt b e a →
   isCorrectPC (WCap p b e a).
 Proof.
   unfold ExecPCPerm, InBounds. intros. constructor; eauto.

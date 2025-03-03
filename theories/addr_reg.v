@@ -276,6 +276,15 @@ Proof.
   reflexivity.
 Qed.
 
+Definition ContiguousRegionPhys (f : PhysAddr) (z : Z) : Prop :=
+  is_Some (f + z)%pa.
+
+Definition SubBoundsPhys (b e : PhysAddr) (b' e' : PhysAddr) :=
+  (b <= b')%pa ∧ (b' <= e')%pa ∧ (e' <= e)%pa.
+
+Definition InBoundsPhys (b e f : PhysAddr):=
+  (b <= f)%pa ∧ (f < e)%pa.
+
 
 (* -------------------------------- Virtual Memory addresses -----------------------------------*)
 
@@ -344,6 +353,15 @@ Proof.
   unfold finz_to_virt_addr_opt, finz_of_virt_addr.
   reflexivity.
 Qed.
+
+Definition ContiguousRegionVirt (f : VirtAddr) (z : Z) : Prop :=
+  is_Some (f + z)%va.
+
+Definition SubBoundsVirt (b e : VirtAddr) (b' e' : VirtAddr) :=
+  (b <= b')%va ∧ (b' <= e')%va ∧ (e' <= e)%va.
+
+Definition InBoundsVirt (b e f : VirtAddr):=
+  (b <= f)%va ∧ (f < e)%va.
 
 (* -------------------------------- Address convertion -----------------------------------*)
 
