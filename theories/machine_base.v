@@ -358,7 +358,7 @@ Definition nonZero (w: Word): bool :=
 
 Definition cap_size (w : Word) : Z :=
   match w with
-  | WCap _ b e _ => (e - b)%Z
+  | WCap _ b e _ => (z_of_virt_addr e - z_of_virt_addr b)%Z
   | _ => 0%Z
   end.
 
@@ -414,9 +414,9 @@ Qed.
 Definition isWithin {z} (n1 n2 b e: finz z) : bool :=
   ((b <=? n1) && (n2 <=? e))%f.
 
-Definition isWithinCap (c: Word) (b e: finz MemNumVirt) : bool :=
+Definition isWithinCap (c: Word) (b e: VirtAddr) : bool :=
   match c with
-  | WCap _ n1 n2 _ => isWithin n1 n2 b e
+  | WCap _ n1 n2 _ => isWithin (finz_of_virt_addr n1) (finz_of_virt_addr n2) (finz_of_virt_addr b) (finz_of_virt_addr e)
   | _ => false
   end.
 
@@ -513,8 +513,8 @@ Proof.
   - right. red; intros H. inversion H.
   - destruct sb as [p b e a | ].
     -- case_eq (match p with RX | RWX => true | _ => false end); intros.
-      + destruct (finz_le_dec b a).
-        * destruct (finz_lt_dec a e).
+      + destruct (finz_le_dec (finz_of_virt_addr b) (finz_of_virt_addr a)).
+        * destruct (finz_lt_dec (finz_of_virt_addr a) (finz_of_virt_addr e)).
           { left. econstructor; simpl; eauto. by auto.
             destruct p; naive_solver. }
           { right. red; intro HH. inversion HH; subst. solve_addr. }
@@ -582,32 +582,31 @@ Qed.
 Lemma isCorrectPC_bounds p b e (a0 a1 a2 : VirtAddr) :
   isCorrectPC (WCap p b e a0) →
   isCorrectPC (WCap p b e a2) →
-  (a0 ≤ a1 < a2)%Z → isCorrectPC (WCap p b e a1).
+  (a0 <= a1 < a2)%va → isCorrectPC (WCap p b e a1).
 Proof.
   intros Hvpc0 Hvpc2 [Hle Hlt].
   inversion Hvpc0.
   - subst; econstructor; auto.
     inversion Hvpc2; subst.
-    + destruct H1 as [Hb He]. destruct H2 as [Hb2 He2]. split.
-      { apply Z.le_trans with a0; auto. }
-      { apply Z.lt_trans with a2; auto. }
+    + destruct H1 as [Hb He]. destruct H2 as [Hb2 He2].
+      split; solve_addr.
 Qed.
 
 Lemma isCorrectPC_bounds_alt p b e (a0 a1 a2 : VirtAddr) :
   isCorrectPC (WCap p b e a0)
   → isCorrectPC (WCap p b e a2)
-  → (a0 ≤ a1)%Z ∧ (a1 ≤ a2)%Z
+  → (a0 <= a1)%va ∧ (a1 <= a2)%va
   → isCorrectPC (WCap p b e a1).
 Proof.
   intros Hvpc0 Hvpc2 [Hle0 Hle2].
   apply Z.lt_eq_cases in Hle2 as [Hlt2 | Heq2].
-  - apply isCorrectPC_bounds with a0 a2; auto.
-  - apply finz_to_z_eq in Heq2. rewrite Heq2. auto.
+  - apply isCorrectPC_bounds with a0 a2; solve_addr.
+  - destruct a1, a2. unfold finz_of_virt_addr in Heq2. apply finz_to_z_eq in Heq2. rewrite Heq2. exact.
 Qed.
 
 Lemma isCorrectPC_withinBounds p b e a :
   isCorrectPC (WCap p b e a) →
-  withinBounds b e a = true.
+  withinBounds (finz_of_virt_addr b) (finz_of_virt_addr e) (finz_of_virt_addr a) = true.
 Proof.
   intros HH. inversion HH; subst.
   rewrite /withinBounds !andb_true_iff Z.leb_le Z.ltb_lt. auto.
@@ -637,7 +636,7 @@ Qed.
 
 Lemma isCorrectPC_ExecPCPerm_InBounds p b e a :
   ExecPCPerm p →
-  InBounds b e a →
+  InBounds (finz_of_virt_addr b) (finz_of_virt_addr e) (finz_of_virt_addr a) →
   isCorrectPC (WCap p b e a).
 Proof.
   unfold ExecPCPerm, InBounds. intros. constructor; eauto.
@@ -713,8 +712,8 @@ Proof.
 Qed.
 
 Global Instance word_inhabited: Inhabited Word := populate (WInt 0).
-Global Instance phys_addr_inhabited: Inhabited PhysAddr := populate (@finz.FinZ MemNumPhys 0%Z eq_refl eq_refl).
-Global Instance virt_addr_inhabited: Inhabited VirtAddr := populate (@finz.FinZ MemNumVirt 0%Z eq_refl eq_refl).
+Global Instance phys_addr_inhabited: Inhabited PhysAddr := populate za_phys.
+Global Instance virt_addr_inhabited: Inhabited VirtAddr := populate za_virt.
 Global Instance otype_inhabited: Inhabited OType := populate (@finz.FinZ ONum 0%Z eq_refl eq_refl).
 
 Global Instance instr_countable : Countable instr.
