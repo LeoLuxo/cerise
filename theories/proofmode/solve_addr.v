@@ -6,22 +6,43 @@ From machine_utils Require Import solve_finz.
 Ltac zify_addr := zify_finz.
 
 Ltac unfold_addr := 
-  match goal with
-  | a : PhysAddr |- _ =>
-    induction a
-  | a : VirtAddr |- _ =>
-    induction a
-  end.
-
-Ltac solve_addr := 
-  repeat unfold_addr;
-  repeat zify_finz_op_goal_step;
-  simpl in *;
   unfold finz_of_phys_addr in *;
   unfold finz_to_phys_addr in *;
+  unfold z_of_phys_addr in *;
+  
+  repeat match goal with
+  | a : PhysAddr |- _ =>
+    induction a
+  | |- PhysAddrCons _ = PhysAddrCons _ =>
+    f_equal
+  | H : PhysAddrCons _ = PhysAddrCons _ |- _ =>
+    injection H as H
+    
+  | H : finz_to_phys_addr' ?f = _ |- _ =>
+    let eq := fresh "Heq" in
+    destruct f eqn:eq in H; simpl in H; inversion H
+  | |- Some _ = Some _ =>
+    f_equal
+  | H : Some _ = Some _ |- _ =>
+    injection H as H
+  end;
+  
   unfold finz_to_phys_addr' in *;
-  simpl in *;
-  repeat f_equal;
+  
+  simpl in *.
+
+
+Ltac solve_addr :=
+  intros; 
+  (* destruct finz_to_phys_addr'; *)
+  unfold_addr;
+  repeat zify_finz_op_goal_step;
+  unfold_addr;
+  (* unfold finz_of_phys_addr in *;
+  unfold finz_to_phys_addr in *;
+  unfold finz_to_phys_addr' in *; *)
+  (* simpl in *;
+  repeat f_equal; *)
   solve_finz.
 
 Tactic Notation "solve_addr" := solve_addr.
@@ -38,17 +59,17 @@ Proof. solve_addr. Qed.
 Lemma incr_phys_addr_one_none (a: PhysAddr) :
   (a + 1)%pa = None ->
   a = top_phys.
-Proof. intros. solve_addr. Qed.
+Proof. solve_addr. Qed.
 
 Lemma incr_phys_addr_opt_add_twice (a: PhysAddr) (n m: Z) :
   (0 <= n)%Z ->
   (0 <= m)%Z ->
   ((a ^+ n) ^+ m)%pa = (a ^+ (n + m)%Z)%pa.
-Proof. intros. solve_addr. Qed.
+Proof. solve_addr. Qed.
 
 (* Lemma incr_phys_addr_opt_add_twice' (a: PhysAddr) (n m: Z) :
   (0 <= n)%Z ->
-  (0 <= m)%Z ->
+  (0 <= m)%Z ->simpl in *
   ((a ^+ n) ^+ m)%pa = (a ^+ (n + m)%Z)%pa.
 Proof. zify_addr;[]. (* only one goal! *) lia. Qed. *)
 
@@ -59,17 +80,17 @@ Lemma phys_top_not_le_eq (a: PhysAddr) : ¬ (a < top_phys)%pa → a = top_phys.
 Proof. solve_addr. Qed.
 
 Lemma phys_next_lt (a a' : PhysAddr) :
-  (a + 1)%pa = Some a' → (a < a')%Z.
+  (a + 1)%pa = Some a' → (a < a')%pa.
 Proof. solve_addr. Qed.
 
 Lemma phys_next_lt_i (a a' : PhysAddr) (i : Z) :
   (i > 0)%Z →
-  (a + i)%pa = Some a' → (a < a')%Z.
+  (a + i)%pa = Some a' → (a < a')%pa.
 Proof. solve_addr. Qed.
 
 Lemma phys_next_le_i (a a' : PhysAddr) (i : Z) :
   (i >= 0)%Z →
-  (a + i)%pa = Some a' → (a <= a')%Z.
+  (a + i)%pa = Some a' → (a <= a')%pa.
 Proof. solve_addr. Qed.
 
 Lemma phys_next_lt_top (a : PhysAddr) i :
@@ -78,23 +99,23 @@ Lemma phys_next_lt_top (a : PhysAddr) i :
 Proof. intros ? [? ?] ?. solve_addr. Qed.
 
 Lemma phys_addr_next_le (a e : PhysAddr) :
-  (a < e)%Z → ∃ a', (a + 1)%pa = Some a'.
+  (a < e)%pa → ∃ a', (a + 1)%pa = Some a'.
 Proof. intros. zify_addr; eauto. exfalso. lia. lia. Qed.
 
 Lemma phys_addr_next_lt (a e : PhysAddr) :
-  (a < e)%Z -> ∃ a', (a + 1)%pa = Some a'.
+  (a < e)%pa -> ∃ a', (a + 1)%pa = Some a'.
 Proof. intros. zify_addr; eauto. exfalso. lia. lia. Qed.
 
 Lemma phys_addr_next_lt_gt_contr (a e a' : PhysAddr) :
-  (a < e)%Z → (a + 1)%pa = Some a' → (e < a')%Z → False.
+  (a < e)%pa → (a + 1)%pa = Some a' → (e < a')%pa → False.
 Proof. solve_addr. Qed.
 
 Lemma phys_addr_next_lt_le (a e a' : PhysAddr) :
-  (a < e)%Z → (a + 1)%pa = Some a' → (a' ≤ e)%Z.
+  (a < e)%pa → (a + 1)%pa = Some a' → (a' <= e)%pa.
 Proof. solve_addr. Qed.
 
 Lemma phys_addr_abs_next (a e a' : PhysAddr) :
-  (a + 1)%pa = Some a' → (a < e)%Z → (Z.abs_nat (e - a) - 1) = (Z.abs_nat (e - a')).
+  (a + 1)%pa = Some a' → (a < e)%pa → (Z.abs_nat ((z_of_phys_addr e) - (z_of_phys_addr a) - 1)) = (Z.abs_nat ((z_of_phys_addr e) - (z_of_phys_addr a'))).
 Proof. solve_addr. Qed.
 
 Lemma incr_phys_addr_trans (a1 a2 a3 : PhysAddr) (z1 z2 : Z) :

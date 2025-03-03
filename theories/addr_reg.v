@@ -233,6 +233,9 @@ Definition finz_of_phys_addr (pa: PhysAddr): finz MemNumPhys :=
   | PhysAddrCons f => f
   end.
 
+Definition z_of_phys_addr (pa: PhysAddr) : Z :=
+  finz.to_z (finz_of_phys_addr pa).
+
 (* Global Coercion finz_of_phys_addr : PhysAddr >-> finz. *)
 
 (* Notation "a1 <= a2 < a3" := (@finz.le_lt MemNumPhys a1 a2 a3) : PhysAddr_scope.
@@ -243,16 +246,16 @@ Notation "a1 <? a2" := (@finz.ltb MemNumPhys a1 a2) : PhysAddr_scope.
 Notation "a1 + z" := (@finz.incr MemNumPhys a1 z) : PhysAddr_scope.
 Notation "a ^+ off" := (@finz.incr_default MemNumPhys a off) (at level 50) : PhysAddr_scope. *)
 
-Notation "a1 <= a2 < a3" := (finz_to_phys_addr' (@finz.le_lt MemNumPhys (finz_of_phys_addr a1) (finz_of_phys_addr a2) (finz_of_phys_addr a3))) : PhysAddr_scope.
-Notation "a1 <= a2" := (finz_to_phys_addr' (@finz.le MemNumPhys (finz_of_phys_addr a1) (finz_of_phys_addr a2))) : PhysAddr_scope.
-Notation "a1 <=? a2" := (finz_to_phys_addr' (@finz.leb MemNumPhys (finz_of_phys_addr a1) (finz_of_phys_addr a2))) : PhysAddr_scope.
-Notation "a1 < a2" := (finz_to_phys_addr' (@finz.lt MemNumPhys (finz_of_phys_addr a1) (finz_of_phys_addr a2))) : PhysAddr_scope.
-Notation "a1 <? a2" := (finz_to_phys_addr' (@finz.ltb MemNumPhys (finz_of_phys_addr a1) (finz_of_phys_addr a2))) : PhysAddr_scope.
+Notation "a1 <= a2 < a3" := (@finz.le_lt MemNumPhys (finz_of_phys_addr a1) (finz_of_phys_addr a2) (finz_of_phys_addr a3)) : PhysAddr_scope.
+Notation "a1 <= a2" := (@finz.le MemNumPhys (finz_of_phys_addr a1) (finz_of_phys_addr a2)) : PhysAddr_scope.
+Notation "a1 <=? a2" := (@finz.leb MemNumPhys (finz_of_phys_addr a1) (finz_of_phys_addr a2)) : PhysAddr_scope.
+Notation "a1 < a2" := (@finz.lt MemNumPhys (finz_of_phys_addr a1) (finz_of_phys_addr a2)) : PhysAddr_scope.
+Notation "a1 <? a2" := (@finz.ltb MemNumPhys (finz_of_phys_addr a1) (finz_of_phys_addr a2)) : PhysAddr_scope.
 Notation "a1 + z" := (finz_to_phys_addr' (@finz.incr MemNumPhys (finz_of_phys_addr a1) z)) : PhysAddr_scope.
 Notation "a ^+ off" := (finz_to_phys_addr (@finz.incr_default MemNumPhys (finz_of_phys_addr a) off)) (at level 50) : PhysAddr_scope.
 
 Notation za_phys := (finz_to_phys_addr (@finz.FinZ MemNumPhys 0%Z eq_refl eq_refl)).
-Notation top_phys := (finz_to_phys_addr (finz.largest (@finz.FinZ MemNumPhys 0%Z eq_refl eq_refl))).
+Notation top_phys := (finz_to_phys_addr (finz.largest (finz_of_phys_addr za_phys))).
 Notation "0" := (za_phys) : PhysAddr_scope.
 
 Notation eqb_phys_addr := (λ (a1 a2: PhysAddr), Z.eqb a1 a2).
