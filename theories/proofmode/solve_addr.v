@@ -130,7 +130,7 @@ Proof. solve_addr. Qed.
 
 Lemma incr_phys_addr_le (a1 a2 a3 : PhysAddr) (z1 z2 : Z) :
   (a1 + z1)%pa = Some a2 -> (a1 + z2)%pa = Some a3 -> (z1 <= z2)%Z ->
-  (a2 <= a3)%Z.
+  (a2 <= a3)%pa.
 Proof. solve_addr. Qed.
 
 Lemma incr_phys_addr_ne (a: PhysAddr) i :
@@ -151,12 +151,12 @@ Proof. solve_addr. Qed.
 
 Lemma incr_phys_addr_of_z (a a' : PhysAddr) :
   (a + 1)%pa = Some a' →
-  (a + 1)%Z = a'.
+  ((z_of_phys_addr a) + 1)%Z = z_of_phys_addr a'.
 Proof. solve_addr. Qed.
 
 Lemma incr_phys_addr_of_z_i (a a' : PhysAddr) i :
   (a + i)%pa = Some a' →
-  (a + i)%Z = a'.
+  ((z_of_phys_addr a) + i)%Z = z_of_phys_addr a'.
 Proof. solve_addr. Qed.
 
 Lemma invert_incr_phys_addr (a1 a2: PhysAddr) (z:Z):
