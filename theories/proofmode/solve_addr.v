@@ -5,7 +5,7 @@ From machine_utils Require Import solve_finz.
 
 Ltac zify_addr := zify_finz.
 
-Ltac unfold_addr := 
+Ltac unfold_phys_addr := 
   unfold finz_of_phys_addr in *;
   unfold finz_to_phys_addr in *;
   unfold z_of_phys_addr in *;
@@ -30,19 +30,45 @@ Ltac unfold_addr :=
   unfold finz_to_phys_addr' in *;
   
   simpl in *.
+  
+  
+
+Ltac unfold_virt_addr := 
+  unfold finz_of_virt_addr in *;
+  unfold finz_to_virt_addr in *;
+  unfold z_of_virt_addr in *;
+  
+  repeat match goal with
+  | a : VirtAddr |- _ =>
+    induction a
+  | |- VirtAddrCons _ = VirtAddrCons _ =>
+    f_equal
+  | H : VirtAddrCons _ = VirtAddrCons _ |- _ =>
+    injection H as H
+    
+  | H : finz_to_virt_addr' ?f = _ |- _ =>
+    let eq := fresh "Heq" in
+    destruct f eqn:eq in H; simpl in H; inversion H
+  | |- Some _ = Some _ =>
+    f_equal
+  | H : Some _ = Some _ |- _ =>
+    injection H as H
+  end;
+  
+  unfold finz_to_virt_addr' in *.
+  
+  
+Ltac unfold_addr := 
+  unfold_phys_addr;
+  unfold_virt_addr;
+  simpl in *.
 
 
 Ltac solve_addr :=
-  intros; 
-  (* destruct finz_to_phys_addr'; *)
+  intros;
   unfold_addr;
   repeat zify_finz_op_goal_step;
   unfold_addr;
-  (* unfold finz_of_phys_addr in *;
-  unfold finz_to_phys_addr in *;
-  unfold finz_to_phys_addr' in *; *)
-  (* simpl in *;
-  repeat f_equal; *)
   solve_finz.
 
 Tactic Notation "solve_addr" := solve_addr.
@@ -182,11 +208,11 @@ Lemma incr_virt_addr_opt_add_twice (a: VirtAddr) (n m: Z) :
   ((a ^+ n) ^+ m)%va = (a ^+ (n + m)%Z)%va.
 Proof. solve_addr. Qed.
 
-Lemma incr_virt_addr_opt_add_twice' (a: VirtAddr) (n m: Z) :
+(* Lemma incr_virt_addr_opt_add_twice' (a: VirtAddr) (n m: Z) :
   (0 <= n)%Z ->
   (0 <= m)%Z ->
   ((a ^+ n) ^+ m)%va = (a ^+ (n + m)%Z)%va.
-Proof. zify_addr;[]. (* only one goal! *) lia. Qed.
+Proof. zify_addr;[]. (* only one goal! *) lia. Qed. *)
 
 Lemma virt_top_le_eq (a: VirtAddr) : (top_virt <= a)%va → a = top_virt.
 Proof. solve_addr. Qed.
@@ -195,17 +221,17 @@ Lemma virt_top_not_le_eq (a: VirtAddr) : ¬ (a < top_virt)%va → a = top_virt.
 Proof. solve_addr. Qed.
 
 Lemma virt_next_lt (a a' : VirtAddr) :
-  (a + 1)%va = Some a' → (a < a')%Z.
+  (a + 1)%va = Some a' → (a < a')%va.
 Proof. solve_addr. Qed.
 
 Lemma virt_next_lt_i (a a' : VirtAddr) (i : Z) :
   (i > 0)%Z →
-  (a + i)%va = Some a' → (a < a')%Z.
+  (a + i)%va = Some a' → (a < a')%va.
 Proof. solve_addr. Qed.
 
 Lemma virt_next_le_i (a a' : VirtAddr) (i : Z) :
   (i >= 0)%Z →
-  (a + i)%va = Some a' → (a <= a')%Z.
+  (a + i)%va = Some a' → (a <= a')%va.
 Proof. solve_addr. Qed.
 
 Lemma virt_next_lt_top (a : VirtAddr) i :
@@ -214,23 +240,23 @@ Lemma virt_next_lt_top (a : VirtAddr) i :
 Proof. intros ? [? ?] ?. solve_addr. Qed.
 
 Lemma virt_addr_next_le (a e : VirtAddr) :
-  (a < e)%Z → ∃ a', (a + 1)%va = Some a'.
+  (a < e)%va → ∃ a', (a + 1)%va = Some a'.
 Proof. intros. zify_addr; eauto. exfalso. lia. lia. Qed.
 
 Lemma virt_addr_next_lt (a e : VirtAddr) :
-  (a < e)%Z -> ∃ a', (a + 1)%va = Some a'.
+  (a < e)%va -> ∃ a', (a + 1)%va = Some a'.
 Proof. intros. zify_addr; eauto. exfalso. lia. lia. Qed.
 
 Lemma virt_addr_next_lt_gt_contr (a e a' : VirtAddr) :
-  (a < e)%Z → (a + 1)%va = Some a' → (e < a')%Z → False.
+  (a < e)%va → (a + 1)%va = Some a' → (e < a')%va → False.
 Proof. solve_addr. Qed.
 
 Lemma virt_addr_next_lt_le (a e a' : VirtAddr) :
-  (a < e)%Z → (a + 1)%va = Some a' → (a' ≤ e)%Z.
+  (a < e)%va → (a + 1)%va = Some a' → (a' <= e)%va.
 Proof. solve_addr. Qed.
 
 Lemma virt_addr_abs_next (a e a' : VirtAddr) :
-  (a + 1)%va = Some a' → (a < e)%Z → (Z.abs_nat (e - a) - 1) = (Z.abs_nat (e - a')).
+  (a + 1)%va = Some a' → (a < e)%va → (Z.abs_nat ((z_of_virt_addr e) - (z_of_virt_addr a)) - 1) = (Z.abs_nat ((z_of_virt_addr e) - (z_of_virt_addr a'))).
 Proof. solve_addr. Qed.
 
 Lemma incr_virt_addr_trans (a1 a2 a3 : VirtAddr) (z1 z2 : Z) :
@@ -245,7 +271,7 @@ Proof. solve_addr. Qed.
 
 Lemma incr_virt_addr_le (a1 a2 a3 : VirtAddr) (z1 z2 : Z) :
   (a1 + z1)%va = Some a2 -> (a1 + z2)%va = Some a3 -> (z1 <= z2)%Z ->
-  (a2 <= a3)%Z.
+  (a2 <= a3)%va.
 Proof. solve_addr. Qed.
 
 Lemma incr_virt_addr_ne (a: VirtAddr) i :
@@ -266,12 +292,12 @@ Proof. solve_addr. Qed.
 
 Lemma incr_virt_addr_of_z (a a' : VirtAddr) :
   (a + 1)%va = Some a' →
-  (a + 1)%Z = a'.
+  ((z_of_virt_addr a) + 1)%Z = (z_of_virt_addr a').
 Proof. solve_addr. Qed.
 
 Lemma incr_virt_addr_of_z_i (a a' : VirtAddr) i :
   (a + i)%va = Some a' →
-  (a + i)%Z = a'.
+  ((z_of_virt_addr a) + i)%Z = (z_of_virt_addr a').
 Proof. solve_addr. Qed.
 
 Lemma invert_incr_virt_addr (a1 a2: VirtAddr) (z:Z):
