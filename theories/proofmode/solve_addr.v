@@ -6,9 +6,10 @@ From machine_utils Require Import solve_finz.
 Ltac zify_addr := zify_finz.
 
 Ltac unfold_phys_addr := 
+  unfold z_of_phys_addr in *;
+  unfold z_to_phys_addr in *;
   unfold finz_of_phys_addr in *;
   unfold finz_to_phys_addr in *;
-  unfold z_of_phys_addr in *;
   
   repeat match goal with
   | a : PhysAddr |- _ =>
@@ -18,7 +19,7 @@ Ltac unfold_phys_addr :=
   | H : PhysAddrCons _ = PhysAddrCons _ |- _ =>
     injection H as H
     
-  | H : finz_to_phys_addr' ?f = _ |- _ =>
+  | H : finz_to_phys_addr_opt ?f = _ |- _ =>
     let eq := fresh "Heq" in
     destruct f eqn:eq in H; simpl in H; inversion H
   | |- Some _ = Some _ =>
@@ -27,16 +28,14 @@ Ltac unfold_phys_addr :=
     injection H as H
   end;
   
-  unfold finz_to_phys_addr' in *;
-  
-  simpl in *.
-  
-  
+  unfold finz_to_phys_addr_opt in *.
+
 
 Ltac unfold_virt_addr := 
+  unfold z_of_virt_addr in *;
+  unfold z_to_virt_addr in *;
   unfold finz_of_virt_addr in *;
   unfold finz_to_virt_addr in *;
-  unfold z_of_virt_addr in *;
   
   repeat match goal with
   | a : VirtAddr |- _ =>
@@ -46,7 +45,7 @@ Ltac unfold_virt_addr :=
   | H : VirtAddrCons _ = VirtAddrCons _ |- _ =>
     injection H as H
     
-  | H : finz_to_virt_addr' ?f = _ |- _ =>
+  | H : finz_to_virt_addr_opt ?f = _ |- _ =>
     let eq := fresh "Heq" in
     destruct f eqn:eq in H; simpl in H; inversion H
   | |- Some _ = Some _ =>
@@ -55,7 +54,7 @@ Ltac unfold_virt_addr :=
     injection H as H
   end;
   
-  unfold finz_to_virt_addr' in *.
+  unfold finz_to_virt_addr_opt in *.
   
   
 Ltac unfold_addr := 
