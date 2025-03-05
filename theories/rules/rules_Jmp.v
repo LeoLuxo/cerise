@@ -10,7 +10,7 @@ Section cap_lang_rules.
   Implicit Types P Q : iProp Σ.
   Implicit Types σ : ExecConf.
   Implicit Types c : cap_lang.expr.
-  Implicit Types a b : Addr.
+  Implicit Types a b : VirtAddr.
   Implicit Types r : RegName.
   Implicit Types v : cap_lang.val.
   Implicit Types w : Word.

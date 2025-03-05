@@ -8,7 +8,7 @@ Section cap_lang_spec_rules.
   Context `{cfgSG Σ, MachineParameters, invGS Σ}.
   Implicit Types P Q : iProp Σ.
   Implicit Types σ : cap_lang.state.
-  Implicit Types a b : Addr.
+  Implicit Types a b : VirtAddr.
   Implicit Types o : OType.
   Implicit Types r : RegName.
   Implicit Types w : Word.
