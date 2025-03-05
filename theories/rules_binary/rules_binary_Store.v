@@ -79,7 +79,7 @@ Section cap_lang_spec_rules.
      }
      destruct r1v as [ | [p b e a | ] | ]; try inversion Hr1v. clear Hr1v.
 
-     destruct (writeAllowed p && withinBounds b e a) eqn:HWA.
+     destruct (writeAllowed p && withinBoundsVirt b e a) eqn:HWA.
      2 : { (* Failure: r2 is either not within bounds or doesnt allow reading *)
         assert (c = Failed ∧ σ2 = (σr, σm)) as (-> & ->)
          by (destruct r2; inversion Hstep; auto).
@@ -132,7 +132,7 @@ Section cap_lang_spec_rules.
       decodeInstrW w = Store dst (inr src) →
      isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
      (pc_a + 1)%a = Some pc_a' →
-     writeAllowed p = true ∧ withinBounds b e a = true →
+     writeAllowed p = true ∧ withinBoundsVirt b e a = true →
      nclose specN ⊆ E →
 
      spec_ctx ∗ ⤇ fill K (Instr Executable)
@@ -179,7 +179,7 @@ Section cap_lang_spec_rules.
      decodeInstrW w = Store dst (inl z) →
      isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
      (pc_a + 1)%a = Some pc_a' →
-     writeAllowed p = true ∧ withinBounds b e a = true →
+     writeAllowed p = true ∧ withinBoundsVirt b e a = true →
      nclose specN ⊆ E →
 
      spec_ctx ∗ ⤇ fill K (Instr Executable)

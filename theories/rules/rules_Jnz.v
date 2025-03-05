@@ -40,12 +40,12 @@ Section cap_lang_rules.
     regs !! PC = Some (WCap pc_p pc_b pc_e pc_a) →
     regs_of (Jnz dst src) ⊆ dom regs →
 
-    {{{ ▷ pc_a ↦ₐ w ∗
+    {{{ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w ∗
         ▷ [∗ map] k↦y ∈ regs, k ↦ᵣ y }}}
       Instr Executable @ Ep
     {{{ regs' retv, RET retv;
         ⌜ Jnz_spec regs dst src regs' retv ⌝ ∗
-        pc_a ↦ₐ w ∗
+        (TEMP_virt_to_phys pc_a) ↦ₐ w ∗
         [∗ map] k↦y ∈ regs', k ↦ᵣ y }}}.
   Proof.
     iIntros (Hinstr Hvpc HPC Dregs φ) "(>Hpc_a & >Hmap) Hφ".
@@ -93,13 +93,13 @@ Section cap_lang_rules.
     w2 ≠ WInt 0%Z →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-        ∗ ▷ pc_a ↦ₐ w
+        ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ r1 ↦ᵣ w1
         ∗ ▷ r2 ↦ᵣ w2 }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ updatePcPerm w1
-          ∗ pc_a ↦ₐ w
+          ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ r1 ↦ᵣ w1
           ∗ r2 ↦ᵣ w2 }}}.
   Proof.
@@ -127,12 +127,12 @@ Section cap_lang_rules.
     w2 ≠ WInt 0%Z →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-        ∗ ▷ pc_a ↦ₐ w
+        ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ r2 ↦ᵣ w2 }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ updatePcPerm w2
-          ∗ pc_a ↦ₐ w
+          ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ r2 ↦ᵣ w2 }}}.
   Proof.
     iIntros (Hinstr Hvpc Hne ϕ) "(>HPC & >Hpc_a & >Hr2) Hφ".
@@ -158,11 +158,11 @@ Section cap_lang_rules.
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-        ∗ ▷ pc_a ↦ₐ w }}}
+        ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ updatePcPerm (WCap pc_p pc_b pc_e pc_a)
-          ∗ pc_a ↦ₐ w }}}.
+          ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w }}}.
   Proof.
     iIntros (Hinstr Hvpc ϕ) "(>HPC & >Hpc_a) Hφ".
     iDestruct (map_of_regs_1 with "HPC") as "Hmap".
@@ -180,12 +180,12 @@ Section cap_lang_rules.
     w2 ≠ WInt 0%Z →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-        ∗ ▷ pc_a ↦ₐ w
+        ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ r2 ↦ᵣ w2 }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ updatePcPerm (WCap pc_p pc_b pc_e pc_a)
-          ∗ pc_a ↦ₐ w
+          ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ r2 ↦ᵣ w2 }}}.
   Proof.
     iIntros (Hinstr Hvpc Hne ϕ) "(>HPC & >Hpc_a & >Hr2) Hφ".
@@ -211,12 +211,12 @@ Section cap_lang_rules.
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-        ∗ ▷ pc_a ↦ₐ w
+        ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ r1 ↦ᵣ w1 }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ updatePcPerm w1
-          ∗ pc_a ↦ₐ w
+          ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ r1 ↦ᵣ w1 }}}.
   Proof.
     iIntros (Hinstr Hvpc ϕ) "(>HPC & >Hpc_a & >Hr1) Hφ".
@@ -236,13 +236,13 @@ Section cap_lang_rules.
     (pc_a + 1)%a = Some pc_a' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-        ∗ ▷ pc_a ↦ₐ w
+        ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ r1 ↦ᵣ w1
         ∗ ▷ r2 ↦ᵣ WInt 0%Z }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
-          ∗ pc_a ↦ₐ w
+          ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ r1 ↦ᵣ w1
           ∗ r2 ↦ᵣ WInt 0%Z }}}.
   Proof.

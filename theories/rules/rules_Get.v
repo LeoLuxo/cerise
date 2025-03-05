@@ -24,9 +24,9 @@ Section cap_lang_rules.
     | WCap p b e a =>
         match i with
         | GetP _ _ => Some (encodePerm p)
-        | GetB _ _ => Some (b:Z)
-        | GetE _ _ => Some (e:Z)
-        | GetA _ _ => Some (a:Z)
+        | GetB _ _ => Some ((z_of_virt_addr b))
+        | GetE _ _ => Some ((z_of_virt_addr e))
+        | GetA _ _ => Some ((z_of_virt_addr a))
         | GetOType _ _ => Some (-1)%Z
         | GetWType _ _ => Some (encodeWordType w)
         | _ => None
@@ -77,9 +77,9 @@ Section cap_lang_rules.
   Definition denote_cap (i: instr) (p : Perm) (b e a : VirtAddr): Z :=
       match i with
       | GetP _ _ => (encodePerm p)
-      | GetB _ _ => b
-      | GetE _ _ => e
-      | GetA _ _ => a
+      | GetB _ _ => (z_of_virt_addr b)
+      | GetE _ _ => (z_of_virt_addr e)
+      | GetA _ _ => (z_of_virt_addr a)
       | GetOType _ _ => (-1)%Z
       | GetWType _ _ => (encodeWordType (WCap p b e a))
       | _ => 0%Z
@@ -129,12 +129,12 @@ Section cap_lang_rules.
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
     regs !! PC = Some (WCap pc_p pc_b pc_e pc_a) →
     regs_of get_i ⊆ dom regs →
-    {{{ ▷ pc_a ↦ₐ w ∗
+    {{{ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w ∗
         ▷ [∗ map] k↦y ∈ regs, k ↦ᵣ y }}}
       Instr Executable @ Ep
     {{{ regs' retv, RET retv;
         ⌜ Get_spec (decodeInstrW w) regs dst src regs' retv ⌝ ∗
-        pc_a ↦ₐ w ∗
+        (TEMP_virt_to_phys pc_a) ↦ₐ w ∗
         [∗ map] k↦y ∈ regs', k ↦ᵣ y }}}.
   Proof.
     iIntros (Hdecode Hinstr Hvpc HPC Dregs φ) "(>Hpc_a & >Hmap) Hφ".
@@ -203,12 +203,12 @@ Section cap_lang_rules.
     denote get_i (WCap pc_p pc_b pc_e pc_a) = Some z →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-        ∗ ▷ pc_a ↦ₐ w
+        ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ dst ↦ᵣ wdst }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
-          ∗ pc_a ↦ₐ w
+          ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ dst ↦ᵣ WInt z }}}.
   Proof.
     iIntros (Hdecode Hinstr Hvpc Hpca' Hdenote φ) "(>HPC & >Hpc_a & >Hdst) Hφ".
@@ -234,12 +234,12 @@ Section cap_lang_rules.
     denote get_i wr = Some z →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-        ∗ ▷ pc_a ↦ₐ w
+        ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ r ↦ᵣ wr }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
-          ∗ pc_a ↦ₐ w
+          ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ r ↦ᵣ WInt z }}}.
   Proof.
     iIntros (Hdecode Hinstr Hvpc Hpca' Hdenote φ) "(>HPC & >Hpc_a & >Hr) Hφ".
@@ -265,13 +265,13 @@ Section cap_lang_rules.
     denote get_i wsrc = Some z →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-        ∗ ▷ pc_a ↦ₐ w
+        ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ src ↦ᵣ wsrc
         ∗ ▷ dst ↦ᵣ wdst }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
-          ∗ pc_a ↦ₐ w
+          ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ src ↦ᵣ wsrc
           ∗ dst ↦ᵣ WInt z }}}.
   Proof.
@@ -298,7 +298,7 @@ Section cap_lang_rules.
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-      ∗ ▷ pc_a ↦ₐ w
+      ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
       ∗ ▷ dst ↦ᵣ wdst
       ∗ ▷ src ↦ᵣ WInt zsrc }}}
       Instr Executable @ E

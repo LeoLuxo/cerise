@@ -63,7 +63,7 @@ Section cap_lang_spec_rules.
      }
      destruct r2v as [ | [p b e a | ] | ]; try inversion Hr2v. clear Hr2v.
 
-     destruct (readAllowed p && withinBounds b e a) eqn:HRA.
+     destruct (readAllowed p && withinBoundsVirt b e a) eqn:HRA.
      2 : { (* Failure: r2 is either not within bounds or doesnt allow reading *)
        symmetry in Hstep; inversion Hstep; clear Hstep. subst c σ2.
        apply andb_false_iff in HRA.
@@ -125,7 +125,7 @@ Section cap_lang_spec_rules.
   Lemma step_load_success_same E K r1 pc_p pc_b pc_e pc_a w w' w'' p b e a pc_a' :
     decodeInstrW w = Load r1 r1 →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-    readAllowed p = true ∧ withinBounds b e a = true →
+    readAllowed p = true ∧ withinBoundsVirt b e a = true →
     (pc_a + 1)%a = Some pc_a' →
     nclose specN ⊆ E →
 
@@ -170,7 +170,7 @@ Section cap_lang_spec_rules.
   Lemma step_load_success_same_alt E K r1 pc_p pc_b pc_e pc_a w w' w'' p b e a pc_a' :
     decodeInstrW w = Load r1 r1 →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-    readAllowed p = true ∧ withinBounds b e a = true →
+    readAllowed p = true ∧ withinBoundsVirt b e a = true →
     (pc_a + 1)%a = Some pc_a' →
     nclose specN ⊆ E →
 
@@ -194,7 +194,7 @@ Section cap_lang_spec_rules.
   Lemma step_load_success E K r1 r2 pc_p pc_b pc_e pc_a w w' w'' p b e a pc_a' :
     decodeInstrW w = Load r1 r2 →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-    readAllowed p = true ∧ withinBounds b e a = true →
+    readAllowed p = true ∧ withinBoundsVirt b e a = true →
     (pc_a + 1)%a = Some pc_a' →
     nclose specN ⊆ E →
 
@@ -245,7 +245,7 @@ Section cap_lang_spec_rules.
   Lemma step_load_success_alt E K r1 r2 pc_p pc_b pc_e pc_a w w' w'' p b e a pc_a' :
     decodeInstrW w = Load r1 r2 →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-    readAllowed p = true ∧ withinBounds b e a = true →
+    readAllowed p = true ∧ withinBoundsVirt b e a = true →
     (pc_a + 1)%a = Some pc_a' →
     nclose specN ⊆ E →
 

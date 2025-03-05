@@ -27,13 +27,13 @@ Section cap_lang_rules.
   | Seal_fail_bounds w p b e a sb:
       regs !! src1 = Some (WSealRange p b e a) →
       regs !! src2 = Some (WSealable sb) →
-      (permit_seal p = false ∨ withinBounds b e a = false) →
+      (permit_seal p = false ∨ withinBoundsVirt b e a = false) →
       Seal_failure regs dst src1 src2 regs
   | Seal_fail_incrPC p b e a sb :
       regs !! src1 = Some (WSealRange p b e a) →
       regs !! src2 = Some (WSealable sb) →
       permit_seal p = true →
-      withinBounds b e a = true →
+      withinBoundsVirt b e a = true →
       incrementPC (<[ dst := WSealed a sb ]> regs) = None →
       Seal_failure regs dst src1 src2 regs.
 
@@ -42,7 +42,7 @@ Section cap_lang_rules.
       regs !! src1 = Some (WSealRange p b e a) →
       regs !! src2 = Some (WSealable sb) →
       permit_seal p = true →
-      withinBounds b e a = true →
+      withinBoundsVirt b e a = true →
       incrementPC (<[ dst := WSealed a sb ]> regs) = Some regs' →
       Seal_spec regs dst src1 src2 regs' NextIV
   | Seal_spec_failure :
@@ -55,12 +55,12 @@ Section cap_lang_rules.
     regs !! PC = Some (WCap pc_p pc_b pc_e pc_a) →
     regs_of (Seal dst src1 src2) ⊆ dom regs →
 
-    {{{ ▷ pc_a ↦ₐ w ∗
+    {{{ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w ∗
         ▷ [∗ map] k↦y ∈ regs, k ↦ᵣ y }}}
       Instr Executable @ Ep
     {{{ regs' retv, RET retv;
         ⌜ Seal_spec regs dst src1 src2 regs' retv ⌝ ∗
-        pc_a ↦ₐ w ∗
+        (TEMP_virt_to_phys pc_a) ↦ₐ w ∗
         [∗ map] k↦y ∈ regs', k ↦ᵣ y }}}.
   Proof.
     iIntros (Hinstr Hvpc HPC Dregs φ) "(>Hpc_a & >Hmap) Hφ".
@@ -106,7 +106,7 @@ Section cap_lang_rules.
      }
      destruct r2v as [ | sb | ]; try inversion Hr2v. clear Hr2v.
 
-     destruct (permit_seal p && withinBounds b e a) eqn:HSA.
+     destruct (permit_seal p && withinBoundsVirt b e a) eqn:HSA.
      2 : { (* Failure: r2 is either not within bounds or doesnt allow sealing *)
        symmetry in Hstep; inversion Hstep; clear Hstep. subst c σ2.
        apply andb_false_iff in HSA.
@@ -148,18 +148,18 @@ Section cap_lang_rules.
     decodeInstrW w = Seal dst r1 r2 →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
     permit_seal p = true →
-    withinBounds b e a = true →
+    withinBoundsVirt b e a = true →
     (pc_a + 1)%a = Some pc_a' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-        ∗ ▷ pc_a ↦ₐ w
+        ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ dst ↦ᵣ w'
         ∗ ▷ r1 ↦ᵣ WSealRange p b e a
         ∗ ▷ r2 ↦ᵣ WSealable sb }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
-          ∗ pc_a ↦ₐ w
+          ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ dst ↦ᵣ WSealed a sb
           ∗ r1 ↦ᵣ WSealRange p b e a
           ∗ r2 ↦ᵣ WSealable sb
@@ -188,17 +188,17 @@ Section cap_lang_rules.
     decodeInstrW w = Seal r1 r1 r2 →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
     permit_seal p = true →
-    withinBounds b e a = true →
+    withinBoundsVirt b e a = true →
     (pc_a + 1)%a = Some pc_a' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-        ∗ ▷ pc_a ↦ₐ w
+        ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ r1 ↦ᵣ WSealRange p b e a
         ∗ ▷ r2 ↦ᵣ WSealable sb }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
-          ∗ pc_a ↦ₐ w
+          ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ r1 ↦ᵣ WSealed a sb
           ∗ r2 ↦ᵣ WSealable sb
       }}}.
@@ -225,17 +225,17 @@ Section cap_lang_rules.
     decodeInstrW w = Seal r2 r1 r2 →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
     permit_seal p = true →
-    withinBounds b e a = true →
+    withinBoundsVirt b e a = true →
     (pc_a + 1)%a = Some pc_a' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-        ∗ ▷ pc_a ↦ₐ w
+        ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ r1 ↦ᵣ WSealRange p b e a
         ∗ ▷ r2 ↦ᵣ WSealable sb }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
-          ∗ pc_a ↦ₐ w
+          ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ r1 ↦ᵣ WSealRange p b e a
           ∗ r2 ↦ᵣ WSealed a sb
       }}}.
@@ -264,17 +264,17 @@ Section cap_lang_rules.
     decodeInstrW w = Seal dst r1 PC →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
     permit_seal p = true →
-    withinBounds b e a = true →
+    withinBoundsVirt b e a = true →
     (pc_a + 1)%a = Some pc_a' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-        ∗ ▷ pc_a ↦ₐ w
+        ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ dst ↦ᵣ w'
         ∗ ▷ r1 ↦ᵣ WSealRange p b e a }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
-          ∗ pc_a ↦ₐ w
+          ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ dst ↦ᵣ WSealed a (SCap pc_p pc_b pc_e pc_a)
           ∗ r1 ↦ᵣ WSealRange p b e a
       }}}.
@@ -301,16 +301,16 @@ Section cap_lang_rules.
     decodeInstrW w = Seal r1 r1 PC →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
     permit_seal p = true →
-    withinBounds b e a = true →
+    withinBoundsVirt b e a = true →
     (pc_a + 1)%a = Some pc_a' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-        ∗ ▷ pc_a ↦ₐ w
+        ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ r1 ↦ᵣ WSealRange p b e a }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
-          ∗ pc_a ↦ₐ w
+          ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ r1 ↦ᵣ WSealed a (SCap pc_p pc_b pc_e pc_a)
       }}}.
   Proof.
@@ -339,7 +339,7 @@ Section cap_lang_rules.
     is_sealb w2 = false →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-          ∗ ▷ pc_a ↦ₐ w
+          ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ ▷ r1 ↦ᵣ WSealRange p b e a
           ∗ ▷ r2 ↦ᵣ w2 }}}
       Instr Executable @ E

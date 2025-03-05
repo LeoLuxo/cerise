@@ -90,12 +90,12 @@ Section cap_lang_rules.
     regs !! PC = Some (WCap pc_p pc_b pc_e pc_a) →
     regs_of (Subseg dst src1 src2) ⊆ dom regs →
 
-    {{{ ▷ pc_a ↦ₐ w ∗
+    {{{ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w ∗
         ▷ [∗ map] k↦y ∈ regs, k ↦ᵣ y }}}
       Instr Executable @ Ep
     {{{ regs' retv, RET retv;
         ⌜ Subseg_spec regs dst src1 src2 regs' retv ⌝ ∗
-        pc_a ↦ₐ w ∗
+        (TEMP_virt_to_phys pc_a) ↦ₐ w ∗
         [∗ map] k↦y ∈ regs', k ↦ᵣ y }}}.
   Proof.
     iIntros (Hinstr Hvpc HPC Dregs φ) "(>Hpc_a & >Hmap) Hφ".
@@ -275,14 +275,14 @@ Section cap_lang_rules.
     (pc_a + 1)%a = Some pc_a' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-        ∗ ▷ pc_a ↦ₐ w
+        ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ dst ↦ᵣ WCap p b e a
         ∗ ▷ r1 ↦ᵣ WInt n1
         ∗ ▷ r2 ↦ᵣ WInt n2 }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
-          ∗ pc_a ↦ₐ w
+          ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ r1 ↦ᵣ WInt n1
           ∗ r2 ↦ᵣ WInt n2
           ∗ dst ↦ᵣ WCap p a1 a2 a
@@ -319,13 +319,13 @@ Section cap_lang_rules.
     (pc_a + 1)%a = Some pc_a' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-        ∗ ▷ pc_a ↦ₐ w
+        ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ dst ↦ᵣ WCap p b e a
         ∗ ▷ r1 ↦ᵣ WInt n1 }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
-          ∗ pc_a ↦ₐ w
+          ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ r1 ↦ᵣ WInt n1
           ∗ dst ↦ᵣ WCap p a1 a1 a
       }}}.
@@ -361,13 +361,13 @@ Section cap_lang_rules.
     (pc_a + 1)%a = Some pc_a' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-        ∗ ▷ pc_a ↦ₐ w
+        ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ dst ↦ᵣ WCap p b e a
         ∗ ▷ r2 ↦ᵣ WInt n2 }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
-          ∗ pc_a ↦ₐ w
+          ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ r2 ↦ᵣ WInt n2
           ∗ dst ↦ᵣ WCap p a1 a2 a
       }}}.
@@ -403,13 +403,13 @@ Section cap_lang_rules.
     (pc_a + 1)%a = Some pc_a' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-        ∗ ▷ pc_a ↦ₐ w
+        ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ dst ↦ᵣ WCap p b e a
         ∗ ▷ r1 ↦ᵣ WInt n1 }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
-          ∗ pc_a ↦ₐ w
+          ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ r1 ↦ᵣ WInt n1
           ∗ dst ↦ᵣ WCap p a1 a2 a
       }}}.
@@ -445,12 +445,12 @@ Section cap_lang_rules.
     (pc_a + 1)%a = Some pc_a' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-        ∗ ▷ pc_a ↦ₐ w
+        ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ dst ↦ᵣ WCap p b e a }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
-          ∗ pc_a ↦ₐ w
+          ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ dst ↦ᵣ WCap p a1 a2 a
       }}}.
   Proof.
@@ -481,12 +481,12 @@ Section cap_lang_rules.
     z_to_addr n1 = Some a1 → z_to_addr n2 = Some a2 →
     ¬ (p ≠ machine_base.E ∧ isWithin a1 a2 b e = true) →
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-          ∗ ▷ pc_a ↦ₐ w
+          ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ ▷ dst ↦ᵣ WCap p b e a }}}
       Instr Executable @ E
       {{{ RET FailedV;
           ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-            ∗ ▷ pc_a ↦ₐ w
+            ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
             ∗ ▷ dst ↦ᵣ WCap p b e a }}}.
   Proof.
     iIntros (? ? ? ? Hncond ?) "(>HPC & >Hpc_a & >Hdst) Hφ".
@@ -515,13 +515,13 @@ Section cap_lang_rules.
     (pc_a + 1)%a = Some pc_a' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-        ∗ ▷ pc_a ↦ₐ w
+        ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ r1 ↦ᵣ WInt n1
         ∗ ▷ r2 ↦ᵣ WInt n2 }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p a1 a2 pc_a'
-          ∗ pc_a ↦ₐ w
+          ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ r1 ↦ᵣ WInt n1
           ∗ r2 ↦ᵣ WInt n2
       }}}.
@@ -556,12 +556,12 @@ Section cap_lang_rules.
     (pc_a + 1)%a = Some pc_a' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-        ∗ ▷ pc_a ↦ₐ w
+        ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ r1 ↦ᵣ WInt n1 }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p a1 a1 pc_a'
-          ∗ pc_a ↦ₐ w
+          ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ r1 ↦ᵣ WInt n1
       }}}.
   Proof.
@@ -595,12 +595,12 @@ Section cap_lang_rules.
     (pc_a + 1)%a = Some pc_a' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-        ∗ ▷ pc_a ↦ₐ w
+        ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ r2 ↦ᵣ WInt n2 }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p a1 a2 pc_a'
-          ∗ pc_a ↦ₐ w
+          ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ r2 ↦ᵣ WInt n2
       }}}.
   Proof.
@@ -634,12 +634,12 @@ Section cap_lang_rules.
     (pc_a + 1)%a = Some pc_a' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-        ∗ ▷ pc_a ↦ₐ w
+        ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ r1 ↦ᵣ WInt n1 }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p a1 a2 pc_a'
-          ∗ pc_a ↦ₐ w
+          ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ r1 ↦ᵣ WInt n1
       }}}.
   Proof.
@@ -673,11 +673,11 @@ Section cap_lang_rules.
     (pc_a + 1)%a = Some pc_a' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-        ∗ ▷ pc_a ↦ₐ w }}}
+        ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p a1 a2 pc_a'
-          ∗ pc_a ↦ₐ w
+          ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
       }}}.
   Proof.
     iIntros (Hinstr Hvpc Hn1 Hn2 Hpne Hwb Hpc_a' ϕ) "(>HPC & >Hpc_a) Hφ".
@@ -710,14 +710,14 @@ Section cap_lang_rules.
     (pc_a + 1)%a = Some pc_a' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-        ∗ ▷ pc_a ↦ₐ w
+        ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ dst ↦ᵣ WSealRange p b e a
         ∗ ▷ r1 ↦ᵣ WInt n1
         ∗ ▷ r2 ↦ᵣ WInt n2 }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
-          ∗ pc_a ↦ₐ w
+          ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ r1 ↦ᵣ WInt n1
           ∗ r2 ↦ᵣ WInt n2
           ∗ dst ↦ᵣ WSealRange p a1 a2 a
@@ -752,13 +752,13 @@ Section cap_lang_rules.
     (pc_a + 1)%a = Some pc_a' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-        ∗ ▷ pc_a ↦ₐ w
+        ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ dst ↦ᵣ WSealRange p b e a
         ∗ ▷ r1 ↦ᵣ WInt n1 }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
-          ∗ pc_a ↦ₐ w
+          ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ r1 ↦ᵣ WInt n1
           ∗ dst ↦ᵣ WSealRange p a1 a1 a
       }}}.
@@ -792,13 +792,13 @@ Section cap_lang_rules.
     (pc_a + 1)%a = Some pc_a' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-        ∗ ▷ pc_a ↦ₐ w
+        ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ dst ↦ᵣ WSealRange p b e a
         ∗ ▷ r2 ↦ᵣ WInt n2 }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
-          ∗ pc_a ↦ₐ w
+          ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ r2 ↦ᵣ WInt n2
           ∗ dst ↦ᵣ WSealRange p a1 a2 a
       }}}.
@@ -832,13 +832,13 @@ Section cap_lang_rules.
     (pc_a + 1)%a = Some pc_a' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-        ∗ ▷ pc_a ↦ₐ w
+        ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ dst ↦ᵣ WSealRange p b e a
         ∗ ▷ r1 ↦ᵣ WInt n1 }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
-          ∗ pc_a ↦ₐ w
+          ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ r1 ↦ᵣ WInt n1
           ∗ dst ↦ᵣ WSealRange p a1 a2 a
       }}}.
@@ -872,12 +872,12 @@ Section cap_lang_rules.
     (pc_a + 1)%a = Some pc_a' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-        ∗ ▷ pc_a ↦ₐ w
+        ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ dst ↦ᵣ WSealRange p b e a }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
-          ∗ pc_a ↦ₐ w
+          ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ dst ↦ᵣ WSealRange p a1 a2 a
       }}}.
   Proof.

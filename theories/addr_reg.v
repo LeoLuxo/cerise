@@ -373,6 +373,8 @@ Proof.
 Qed.
 
 (* TEMPORARILY: virtual and physical addresses are a 1-to-1 mapping *)
+
+
 Definition TEMP_virt_to_phys (v: VirtAddr) : PhysAddr.
 Proof.
   apply finz_to_phys_addr.

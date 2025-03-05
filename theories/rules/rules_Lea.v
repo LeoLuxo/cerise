@@ -76,12 +76,12 @@ Section cap_lang_rules.
      isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
      regs !! PC = Some (WCap pc_p pc_b pc_e pc_a) →
      regs_of (Lea r1 arg) ⊆ dom regs →
-     {{{ ▷ pc_a ↦ₐ w ∗
+     {{{ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w ∗
          ▷ [∗ map] k↦y ∈ regs, k ↦ᵣ y }}}
        Instr Executable @ Ep
      {{{ regs' retv, RET retv;
          ⌜ Lea_spec regs r1 arg regs' retv ⌝ ∗
-         pc_a ↦ₐ w ∗
+         (TEMP_virt_to_phys pc_a) ↦ₐ w ∗
          [∗ map] k↦y ∈ regs', k ↦ᵣ y }}}.
    Proof.
      iIntros (Hinstr Hvpc HPC Dregs φ) "(>Hpc_a & >Hmap) Hφ".
@@ -211,12 +211,12 @@ Section cap_lang_rules.
      pc_p ≠ E →
 
      {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-           ∗ ▷ pc_a ↦ₐ w
+           ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
            ∗ ▷ rv ↦ᵣ WInt z }}}
        Instr Executable @ Ep
        {{{ RET NextIV;
            PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
-              ∗ pc_a ↦ₐ w
+              ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
               ∗ rv ↦ᵣ WInt z }}}.
    Proof.
      iIntros (Hinstr Hvpc Hpca' Ha' Hnep φ) "(>HPC & >Hpc_a & >Hrv) Hφ".
@@ -249,13 +249,13 @@ Section cap_lang_rules.
      p ≠ E →
 
      {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-           ∗ ▷ pc_a ↦ₐ w
+           ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
            ∗ ▷ r1 ↦ᵣ WCap p b e a
            ∗ ▷ rv ↦ᵣ WInt z }}}
        Instr Executable @ Ep
        {{{ RET NextIV;
            PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
-              ∗ pc_a ↦ₐ w
+              ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
               ∗ rv ↦ᵣ WInt z
               ∗ r1 ↦ᵣ WCap p b e a' }}}.
    Proof.
@@ -291,11 +291,11 @@ Section cap_lang_rules.
      pc_p ≠ E →
 
      {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-           ∗ ▷ pc_a ↦ₐ w }}}
+           ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w }}}
        Instr Executable @ Ep
      {{{ RET NextIV;
          PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
-            ∗ pc_a ↦ₐ w }}}.
+            ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w }}}.
    Proof.
      iIntros (Hinstr Hvpc Hpca' Ha' Hnep ϕ) "(>HPC & >Hpc_a) Hφ".
      iDestruct (map_of_regs_1 with "HPC") as "Hmap".
@@ -325,12 +325,12 @@ Section cap_lang_rules.
      p ≠ E →
 
      {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-           ∗ ▷ pc_a ↦ₐ w
+           ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
            ∗ ▷ r1 ↦ᵣ WCap p b e a }}}
        Instr Executable @ Ep
      {{{ RET NextIV;
          PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
-            ∗ pc_a ↦ₐ w
+            ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
             ∗ r1 ↦ᵣ WCap p b e a' }}}.
    Proof.
      iIntros (Hinstr Hvpc Hpca' Ha' Hnep ϕ) "(>HPC & >Hpc_a & >Hr1) Hφ".
@@ -365,13 +365,13 @@ Section cap_lang_rules.
      (a + z)%ot = Some a' →
 
      {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-           ∗ ▷ pc_a ↦ₐ w
+           ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
            ∗ ▷ r1 ↦ᵣ WSealRange p b e a
            ∗ ▷ rv ↦ᵣ WInt z }}}
        Instr Executable @ Ep
        {{{ RET NextIV;
            PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
-              ∗ pc_a ↦ₐ w
+              ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
               ∗ rv ↦ᵣ WInt z
               ∗ r1 ↦ᵣ WSealRange p b e a' }}}.
    Proof.
@@ -405,12 +405,12 @@ Section cap_lang_rules.
      (a + z)%ot = Some a' →
 
      {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-           ∗ ▷ pc_a ↦ₐ w
+           ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
            ∗ ▷ r1 ↦ᵣ WSealRange p b e a }}}
        Instr Executable @ Ep
      {{{ RET NextIV;
          PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
-            ∗ pc_a ↦ₐ w
+            ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
             ∗ r1 ↦ᵣ WSealRange p b e a' }}}.
    Proof.
      iIntros (Hinstr Hvpc Hpca' Ha' ϕ) "(>HPC & >Hpc_a & >Hr1) Hφ".
@@ -441,7 +441,7 @@ Section cap_lang_rules.
      (a + z)%va = None ->
 
      {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-           ∗ ▷ pc_a ↦ₐ w
+           ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
            ∗ ▷ r1 ↦ᵣ WCap p b e a
            ∗ ▷ rv ↦ᵣ WInt z }}}
        Instr Executable @ Ep

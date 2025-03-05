@@ -19,7 +19,7 @@ Section cap_lang_rules.
 
   Definition reg_allows_load (regs : Reg) (r : RegName) p b e a  :=
     regs !! r = Some (WCap p b e a) ∧
-    readAllowed p = true ∧ withinBounds b e a = true.
+    readAllowed p = true ∧ withinBoundsVirt b e a = true.
 
   Inductive Load_failure (regs: Reg) (r1 r2: RegName) (mem : gmap PhysAddr Word) :=
   | Load_fail_const w:
@@ -28,12 +28,12 @@ Section cap_lang_rules.
       Load_failure regs r1 r2 mem
   | Load_fail_bounds p b e a:
       regs !! r2 = Some (WCap p b e a) ->
-      (readAllowed p = false ∨ withinBounds b e a = false) →
+      (readAllowed p = false ∨ withinBoundsVirt b e a = false) →
       Load_failure regs r1 r2 mem
   (* Notice how the None below also includes all cases where we read an inl value into the PC, because then incrementing it will fail *)
   | Load_fail_invalid_PC p b e a loadv:
       regs !! r2 = Some (WCap p b e a) ->
-      mem !! a = Some loadv →
+      mem !! (TEMP_virt_to_phys a) = Some loadv →
       incrementPC (<[ r1 := loadv ]> regs) = None ->
       Load_failure regs r1 r2 mem
   .
@@ -44,7 +44,7 @@ Section cap_lang_rules.
   :=
   | Load_spec_success p b e a loadv :
     reg_allows_load regs r2 p b e a →
-    mem !! a = Some loadv →
+    mem !! (TEMP_virt_to_phys a) = Some loadv →
     incrementPC
       (<[ r1 := loadv ]> regs) = Some regs' ->
     Load_spec regs r1 r2 regs' mem NextIV
@@ -54,9 +54,9 @@ Section cap_lang_rules.
     Load_spec regs r1 r2 regs' mem FailedV.
 
   Definition allow_load_map_or_true r (regs : Reg) (mem : gmap PhysAddr Word):=
-    ∃ p b e a, read_reg_inr regs r p b e a ∧
+    ∃ p (b e a:VirtAddr), read_reg_inr regs r p b e a ∧
       if decide (reg_allows_load regs r p b e a) then
-        ∃ w, mem !! a = Some w
+        ∃ w, mem !! (TEMP_virt_to_phys a) = Some w
       else True.
 
   Lemma allow_load_implies_loadv:
@@ -64,9 +64,9 @@ Section cap_lang_rules.
       allow_load_map_or_true r2 r mem0
       → r !! r2 = Some (WCap p b e a)
       → readAllowed p = true
-      → withinBounds b e a = true
+      → withinBoundsVirt b e a = true
       → ∃ (loadv : Word),
-          mem0 !! a = Some loadv.
+          mem0 !! (TEMP_virt_to_phys a) = Some loadv.
   Proof.
     intros r2 mem0 r p b e a HaLoad Hr2v Hra Hwb.
     unfold allow_load_map_or_true, read_reg_inr in HaLoad.
@@ -78,8 +78,8 @@ Section cap_lang_rules.
   Qed.
 
   Lemma mem_eq_implies_allow_load_map:
-    ∀ (regs : Reg)(mem : gmap Addr Word)(r2 : RegName) (w : Word) p b e a,
-      mem = <[a:=w]> ∅
+    ∀ (regs : Reg)(mem : gmap PhysAddr Word)(r2 : RegName) (w : Word) p b e a,
+      mem = <[(TEMP_virt_to_phys a):=w]> ∅
       → regs !! r2 = Some (WCap p b e a)
       → allow_load_map_or_true r2 regs mem.
   Proof.
@@ -89,12 +89,14 @@ Section cap_lang_rules.
     - case_decide; last done.
       exists w. simplify_map_eq. auto.
   Qed.
+  
+  Search (insert _ _ (insert _ _ _) ).
 
   Lemma mem_neq_implies_allow_load_map:
-    ∀ (regs : Reg)(mem : gmap Addr Word)(r2 : RegName) (pc_a : Addr)
+    ∀ (regs : Reg)(mem : gmap PhysAddr Word)(r2 : RegName) (pc_a : VirtAddr)
       (w w' : Word) p b e a,
       a ≠ pc_a
-      → mem = <[pc_a:=w]> (<[a:=w']> ∅)
+      → mem = <[(TEMP_virt_to_phys pc_a):=w]> (<[(TEMP_virt_to_phys a):=w']> ∅)
       → regs !! r2 = Some (WCap p b e a)
       → allow_load_map_or_true r2 regs mem.
   Proof.
@@ -102,11 +104,15 @@ Section cap_lang_rules.
     exists p,b,e,a; split.
     - unfold read_reg_inr. by rewrite Hreg2.
     - case_decide; last done.
-      exists w'. simplify_map_eq. auto.
+      exists w'.
+      subst.
+      rewrite insert_commute.
+      + simplify_map_eq. auto.
+      + intro. unfold not in H4. destruct H4. injection H3.  
   Qed.
 
   Lemma mem_implies_allow_load_map:
-    ∀ (regs : Reg)(mem : gmap Addr Word)(r2 : RegName) (pc_a : Addr)
+    ∀ (regs : Reg)(mem : gmap PhysAddr Word)(r2 : RegName) (pc_a : Addr)
       (w w' : Word) p b e a,
       (if (a =? pc_a)%a
        then mem = <[pc_a:=w]> ∅
@@ -126,7 +132,7 @@ Section cap_lang_rules.
       (if (a0 =? pc_a)%a
        then mem0 = <[pc_a:=w]> ∅
        else mem0 = <[pc_a:=w]> (<[a0:=w']> ∅))→
-      mem0 !! a0 = Some loadv →
+      mem0 !! (TEMP_virt_to_phys a)0 = Some loadv →
       loadv = (if (a0 =? pc_a)%a then w else w').
   Proof.
     intros pc_a w w' a0 mem0 loadv H4 H6.
@@ -192,7 +198,7 @@ Section cap_lang_rules.
      }
      destruct r2v as [ | [p b e a | ] | ]; try inversion Hr2v. clear Hr2v.
 
-    destruct (readAllowed p && withinBounds b e a) eqn:HRA.
+    destruct (readAllowed p && withinBoundsVirt b e a) eqn:HRA.
     2 : { (* Failure: r2 is either not within bounds or doesnt allow reading *)
       symmetry in Hstep; inversion Hstep; clear Hstep. subst c σ2.
       apply andb_false_iff in HRA.
@@ -205,7 +211,7 @@ Section cap_lang_rules.
 
     assert (is_Some (dfracs !! a)) as [dq' Hdq'].
     { apply elem_of_dom. rewrite -Hdomeq. apply elem_of_dom;eauto. }
-    assert (prod_merge dfracs mem !! a = Some (dq',loadv)) as Hmemadq.
+    assert (prod_merge dfracs mem !! (TEMP_virt_to_phys a) = Some (dq',loadv)) as Hmemadq.
     { rewrite lookup_merge Hmema Hdq' //. }
     iDestruct (gen_mem_valid_inSepM_general (prod_merge dfracs mem) m a loadv with "Hm Hmem" ) as %Hma' ; eauto.
 
@@ -268,11 +274,11 @@ Section cap_lang_rules.
   Lemma wp_load_success E r1 r2 pc_p pc_b pc_e pc_a w w' w'' p b e a pc_a' dq dq' :
     decodeInstrW w = Load r1 r2 →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-    readAllowed p = true ∧ withinBounds b e a = true →
+    readAllowed p = true ∧ withinBoundsVirt b e a = true →
     (pc_a + 1)%a = Some pc_a' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-          ∗ ▷ pc_a ↦ₐ{dq} w
+          ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ{dq} w
           ∗ ▷ r1 ↦ᵣ w''
           ∗ ▷ r2 ↦ᵣ WCap p b e a
           ∗ (if (eqb_addr a pc_a) then emp else ▷ a ↦ₐ{dq'} w') }}}
@@ -280,7 +286,7 @@ Section cap_lang_rules.
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
              ∗ r1 ↦ᵣ (if (eqb_addr a pc_a) then w else w')
-             ∗ pc_a ↦ₐ{dq} w
+             ∗ (TEMP_virt_to_phys pc_a) ↦ₐ{dq} w
              ∗ r2 ↦ᵣ WCap p b e a
              ∗ (if (eqb_addr a pc_a) then emp else a ↦ₐ{dq'} w') }}}.
   Proof.
@@ -318,11 +324,11 @@ Section cap_lang_rules.
   Lemma wp_load_success_notinstr E r1 r2 pc_p pc_b pc_e pc_a w w' w'' p b e a pc_a' dq dq' :
     decodeInstrW w = Load r1 r2 →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-    readAllowed p = true ∧ withinBounds b e a = true →
+    readAllowed p = true ∧ withinBoundsVirt b e a = true →
     (pc_a + 1)%a = Some pc_a' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-          ∗ ▷ pc_a ↦ₐ{dq} w
+          ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ{dq} w
           ∗ ▷ r1 ↦ᵣ w''
           ∗ ▷ r2 ↦ᵣ WCap p b e a
           ∗ ▷ a ↦ₐ{dq'} w' }}}
@@ -330,7 +336,7 @@ Section cap_lang_rules.
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
              ∗ r1 ↦ᵣ w'
-             ∗ pc_a ↦ₐ{dq} w
+             ∗ (TEMP_virt_to_phys pc_a) ↦ₐ{dq} w
              ∗ r2 ↦ᵣ WCap p b e a
              ∗ a ↦ₐ{dq'} w' }}}.
   Proof.
@@ -356,14 +362,14 @@ Section cap_lang_rules.
     (pc_a + 1)%a = Some pc_a' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-          ∗ ▷ pc_a ↦ₐ{dq} w
+          ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ{dq} w
           ∗ ▷ r1 ↦ᵣ w''
           ∗ ▷ r2 ↦ᵣ WCap p b e pc_a }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
              ∗ r1 ↦ᵣ w
-             ∗ pc_a ↦ₐ{dq} w
+             ∗ (TEMP_virt_to_phys pc_a) ↦ₐ{dq} w
              ∗ r2 ↦ᵣ WCap p b e pc_a }}}.
   Proof.
     intros. iIntros "(>HPC & >Hpc_a & >Hr1 & >Hr2)".
@@ -377,18 +383,18 @@ Section cap_lang_rules.
     decodeInstrW w = Load r1 r1 →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
     readAllowed p = true →
-    withinBounds b e a = true →
+    withinBoundsVirt b e a = true →
     (pc_a + 1)%a = Some pc_a' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-          ∗ ▷ pc_a ↦ₐ{dq} w
+          ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ{dq} w
           ∗ ▷ r1 ↦ᵣ WCap p b e a
           ∗ (if (a =? pc_a)%a then emp else ▷ a ↦ₐ{dq'} w') }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
              ∗ r1 ↦ᵣ (if (a =? pc_a)%a then w else w')
-             ∗ pc_a ↦ₐ{dq} w
+             ∗ (TEMP_virt_to_phys pc_a) ↦ₐ{dq} w
              ∗ (if (a =? pc_a)%a then emp else a ↦ₐ{dq'} w') }}}.
   Proof.
     iIntros (Hinstr Hvpc Hra Hwb Hpca' φ)
@@ -426,18 +432,18 @@ Section cap_lang_rules.
     decodeInstrW w = Load r1 r1 →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
     readAllowed p = true →
-    withinBounds b e a = true →
+    withinBoundsVirt b e a = true →
     (pc_a + 1)%a = Some pc_a' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-          ∗ ▷ pc_a ↦ₐ{dq} w
+          ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ{dq} w
           ∗ ▷ r1 ↦ᵣ WCap p b e a
           ∗ ▷ a ↦ₐ{dq'} w' }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
              ∗ r1 ↦ᵣ w'
-             ∗ pc_a ↦ₐ{dq} w
+             ∗ (TEMP_virt_to_phys pc_a) ↦ₐ{dq} w
              ∗ a ↦ₐ{dq'} w' }}}.
   Proof.
     intros. iIntros "(>HPC & >Hpc_a & >Hr1 & >Ha)".
@@ -464,13 +470,13 @@ Section cap_lang_rules.
     (pc_a + 1)%a = Some pc_a' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-          ∗ ▷ pc_a ↦ₐ{dq} w
+          ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ{dq} w
           ∗ ▷ r1 ↦ᵣ WCap p b e pc_a }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
              ∗ r1 ↦ᵣ w
-             ∗ pc_a ↦ₐ{dq} w }}}.
+             ∗ (TEMP_virt_to_phys pc_a) ↦ₐ{dq} w }}}.
   Proof.
     intros. iIntros "(>HPC & >Hpc_a & >Hr1)".
     iIntros "Hφ". iApply (wp_load_success_same with "[$HPC $Hpc_a $Hr1]"); eauto.
@@ -484,17 +490,17 @@ Section cap_lang_rules.
         p b e a p' b' e' a' a'' :
     decodeInstrW w = Load PC r2 →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-    readAllowed p = true ∧ withinBounds b e a = true →
+    readAllowed p = true ∧ withinBoundsVirt b e a = true →
     (a' + 1)%a = Some a'' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-          ∗ ▷ pc_a ↦ₐ w
+          ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ ▷ r2 ↦ᵣ WCap p b e a
           ∗ ▷ a ↦ₐ WCap p' b' e' a' }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap p' b' e' a''
-             ∗ pc_a ↦ₐ w
+             ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
              ∗ r2 ↦ᵣ WCap p b e a
              ∗ a ↦ₐ WCap p' b' e' a' }}}.
   Proof.
@@ -529,12 +535,12 @@ Section cap_lang_rules.
     (pc_a + 1)%a = Some pc_a' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-          ∗ ▷ pc_a ↦ₐ{dq} w
+          ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ{dq} w
           ∗ ▷ r1 ↦ᵣ w'' }}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
-             ∗ pc_a ↦ₐ{dq} w
+             ∗ (TEMP_virt_to_phys pc_a) ↦ₐ{dq} w
              ∗ r1 ↦ᵣ w }}}.
   Proof.
     iIntros (Hinstr Hvpc Hpca' φ)
@@ -567,11 +573,11 @@ Section cap_lang_rules.
   Lemma wp_load_success_alt E r1 r2 pc_p pc_b pc_e pc_a w w' w'' p b e a pc_a' :
     decodeInstrW w = Load r1 r2 →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-    readAllowed p = true ∧ withinBounds b e a = true →
+    readAllowed p = true ∧ withinBoundsVirt b e a = true →
     (pc_a + 1)%a = Some pc_a' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-          ∗ ▷ pc_a ↦ₐ w
+          ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ ▷ r1 ↦ᵣ w''
           ∗ ▷ r2 ↦ᵣ WCap p b e a
           ∗ ▷ a ↦ₐ w' }}}
@@ -579,7 +585,7 @@ Section cap_lang_rules.
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
              ∗ r1 ↦ᵣ w'
-             ∗ pc_a ↦ₐ w
+             ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
              ∗ r2 ↦ᵣ WCap p b e a
              ∗ a ↦ₐ w' }}}.
   Proof.
@@ -592,18 +598,18 @@ Section cap_lang_rules.
   Lemma wp_load_success_same_alt E r1 pc_p pc_b pc_e pc_a w w' p b e a pc_a' :
     decodeInstrW w = Load r1 r1 →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-    readAllowed p = true ∧ withinBounds b e a = true →
+    readAllowed p = true ∧ withinBoundsVirt b e a = true →
     (pc_a + 1)%a = Some pc_a' →
 
     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-          ∗ ▷ pc_a ↦ₐ w
+          ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ ▷ r1 ↦ᵣ WCap p b e a
           ∗ ▷ a ↦ₐ w'}}}
       Instr Executable @ E
       {{{ RET NextIV;
           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
              ∗ r1 ↦ᵣ w'
-             ∗ pc_a ↦ₐ w
+             ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
              ∗ a ↦ₐ w' }}}.
   Proof.
     iIntros (Hinstr Hvpc [Hra Hwb] Hpca' φ) "(>HPC & >Hpc_a & >Hr1 & >Ha) Hφ".

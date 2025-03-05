@@ -133,7 +133,7 @@ Section fundamental.
       (a a0 : Addr) (w : Word) (r1 : RegName)
       (mem0 : gmap Addr Word) p b e,
         allow_store_mem r1 r a w mem0 p b e a0
-        -∗ ⌜mem0 !! a = Some w⌝
+        -∗ ⌜mem0 !! (TEMP_virt_to_phys a) = Some w⌝
           ∗ ⌜allow_store_map_or_true r1 r mem0⌝.
   Proof.
     iIntros (r a a0 w r1 mem0 p b e) "HStoreMem".
@@ -161,7 +161,7 @@ Section fundamental.
       (a : Addr) (w : Word) (src : RegName) p0
       (b0 e0 a0 : Addr) (mem0 : gmap Addr Word) storev loadv,
       reg_allows_store r src p0 b0 e0 a0
-      → mem0 !! a0 = Some loadv
+      → mem0 !! (TEMP_virt_to_phys a)0 = Some loadv
       → allow_store_mem src r a w mem0 p0 b0 e0 a0
                         -∗ ([∗ map] a1↦w ∈ (<[a0:=storev]> mem0), a1 ↦ₐ w ∗ a1 ↣ₐ w)
                         -∗ interp (storev,storev)

@@ -73,12 +73,12 @@ Section cap_lang_rules.
     regs !! PC = Some (WCap pc_p pc_b pc_e pc_a) →
     regs_of (Restrict dst src) ⊆ dom regs →
 
-    {{{ ▷ pc_a ↦ₐ w ∗
+    {{{ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w ∗
         ▷ [∗ map] k↦y ∈ regs, k ↦ᵣ y }}}
       Instr Executable @ Ep
     {{{ regs' retv, RET retv;
         ⌜ Restrict_spec regs dst src regs' retv ⌝ ∗
-        pc_a ↦ₐ w ∗
+        (TEMP_virt_to_phys pc_a) ↦ₐ w ∗
         [∗ map] k↦y ∈ regs', k ↦ᵣ y }}}.
   Proof.
     iIntros (Hinstr Hvpc HPC Dregs φ) "(>Hpc_a & >Hmap) Hφ".
@@ -194,12 +194,12 @@ Section cap_lang_rules.
     PermFlowsTo (decodePerm z) pc_p = true →
 
      {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-         ∗ ▷ pc_a ↦ₐ w
+         ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
          ∗ ▷ rv ↦ᵣ WInt z }}}
        Instr Executable @ Ep
        {{{ RET NextIV;
            PC ↦ᵣ WCap (decodePerm z) pc_b pc_e pc_a'
-           ∗ pc_a ↦ₐ w
+           ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
            ∗ rv ↦ᵣ WInt z }}}.
    Proof.
      iIntros (Hinstr Hvpc Hpca' Hflows ϕ) "(>HPC & >Hpc_a & >Hrv) Hφ".
@@ -232,13 +232,13 @@ Section cap_lang_rules.
      p ≠ E →
 
      {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-         ∗ ▷ pc_a ↦ₐ w
+         ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
          ∗ ▷ r1 ↦ᵣ WCap p b e a
          ∗ ▷ rv ↦ᵣ WInt z }}}
        Instr Executable @ Ep
        {{{ RET NextIV;
            PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
-           ∗ pc_a ↦ₐ w
+           ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
            ∗ rv ↦ᵣ WInt z
            ∗ r1 ↦ᵣ WCap (decodePerm z) b e a }}}.
    Proof.
@@ -269,11 +269,11 @@ Section cap_lang_rules.
      PermFlowsTo (decodePerm z) pc_p = true →
 
      {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-         ∗ ▷ pc_a ↦ₐ w }}}
+         ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w }}}
        Instr Executable @ Ep
      {{{ RET NextIV;
          PC ↦ᵣ WCap (decodePerm z) pc_b pc_e pc_a'
-         ∗ pc_a ↦ₐ w }}}.
+         ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w }}}.
    Proof.
      iIntros (Hinstr Hvpc Hpca' Hflows ϕ) "(>HPC & >Hpc_a) Hφ".
      iDestruct (map_of_regs_1 with "HPC") as "Hmap".
@@ -305,12 +305,12 @@ Section cap_lang_rules.
      p ≠ E →
 
      {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-         ∗ ▷ pc_a ↦ₐ w
+         ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
          ∗ ▷ r1 ↦ᵣ WCap p b e a }}}
        Instr Executable @ Ep
      {{{ RET NextIV;
          PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
-         ∗ pc_a ↦ₐ w
+         ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
          ∗ r1 ↦ᵣ WCap (decodePerm z) b e a }}}.
    Proof.
      iIntros (Hinstr Hvpc Hpca' Hflows HpE ϕ) "(>HPC & >Hpc_a & >Hr1) Hφ".
@@ -344,13 +344,13 @@ Section cap_lang_rules.
      SealPermFlowsTo (decodeSealPerms z) p = true →
 
      {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-         ∗ ▷ pc_a ↦ₐ w
+         ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
          ∗ ▷ r1 ↦ᵣ WSealRange p b e a
          ∗ ▷ rv ↦ᵣ WInt z }}}
        Instr Executable @ Ep
        {{{ RET NextIV;
            PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
-           ∗ pc_a ↦ₐ w
+           ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
            ∗ rv ↦ᵣ WInt z
            ∗ r1 ↦ᵣ WSealRange (decodeSealPerms z) b e a }}}.
    Proof.
@@ -380,12 +380,12 @@ Section cap_lang_rules.
      SealPermFlowsTo (decodeSealPerms z) p = true →
 
      {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-         ∗ ▷ pc_a ↦ₐ w
+         ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
          ∗ ▷ r1 ↦ᵣ WSealRange p b e a }}}
        Instr Executable @ Ep
      {{{ RET NextIV;
          PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
-         ∗ pc_a ↦ₐ w
+         ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
          ∗ r1 ↦ᵣ WSealRange (decodeSealPerms z) b e a }}}.
    Proof.
      iIntros (Hinstr Hvpc Hpca' Hflows ϕ) "(>HPC & >Hpc_a & >Hr1) Hφ".

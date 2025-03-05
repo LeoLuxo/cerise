@@ -22,12 +22,12 @@ Section cap_lang_rules.
      isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
 
      {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-         ∗ ▷ pc_a ↦ₐ w
+         ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
          ∗ ▷ r ↦ᵣ w' }}}
        Instr Executable @ E
        {{{ RET NextIV;
            PC ↦ᵣ updatePcPerm w'
-           ∗ pc_a ↦ₐ w
+           ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
            ∗ r ↦ᵣ w' }}}.
   Proof.
     iIntros (Hinstr Hvpc ϕ) "(>HPC & >Hpc_a & >Hr) Hφ".
@@ -53,11 +53,11 @@ Section cap_lang_rules.
      isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
 
      {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
-         ∗ ▷ pc_a ↦ₐ w }}}
+         ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w }}}
        Instr Executable @ E
        {{{ RET NextIV;
            PC ↦ᵣ updatePcPerm (WCap pc_p pc_b pc_e pc_a)
-           ∗ pc_a ↦ₐ w }}}.
+           ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w }}}.
   Proof.
     iIntros (Hinstr Hvpc ϕ) "(>HPC & >Hpc_a) Hφ".
     iApply wp_lift_atomic_base_step_no_fork; auto.

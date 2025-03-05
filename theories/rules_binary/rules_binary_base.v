@@ -420,7 +420,7 @@ Section cap_lang_spec_resources.
 
   Lemma memspec_v_implies_m_v:
     ∀ mem0 σ e' (b e a : Addr) (v : Word) q,
-      mem0 !! a = Some v
+      mem0 !! (TEMP_virt_to_phys a) = Some v
       → ([∗ map] a0↦w ∈ mem0, memspec_pointsto a0 q w)
           -∗ spec_res e' σ -∗ ⌜σ.2 !! a = Some v⌝.
   Proof.

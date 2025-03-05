@@ -122,7 +122,7 @@ Section fundamental.
        (a a0 : Addr) (w : Word) (src : RegName)
       (mem0 : gmap Addr Word) p b e P f,
         allow_load_mem src r a w mem0 a0 p b e P f
-        -∗ ⌜mem0 !! a = Some w⌝
+        -∗ ⌜mem0 !! (TEMP_virt_to_phys a) = Some w⌝
           ∗ ⌜allow_load_map_or_true src r mem0⌝.
   Proof.
     iIntros (r a a0 w src mem0 p b e P f) "HLoadMem".
@@ -167,7 +167,7 @@ Section fundamental.
     ∀ (r : leibnizO Reg)
        (a : Addr) (w : Word) (src : RegName) p0
        (b0 e0 a0 : Addr) (mem0 : gmap Addr Word) loadv P,
-      mem0 !! a0 = Some loadv
+      mem0 !! (TEMP_virt_to_phys a)0 = Some loadv
       -> reg_allows_load r src p0 b0 e0 a0
       → allow_load_mem src r a w mem0 a0 p0 b0 e0 P false
         -∗ ([∗ map] a0↦w ∈ mem0, a0 ↦ₐ w ∗ a0 ↣ₐ w)
