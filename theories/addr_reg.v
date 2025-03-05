@@ -393,27 +393,6 @@ Next Obligation.
   assumption.
 Defined.
 
-  (* generalize (finz_spec f); intros [lt nz].
-  apply Z.lt_le_trans with _ _ MemNumPhys in lt; last exact phys_fits_in_virt.
-  unfold finz_of_virt_addr, finz.of_z in *.
-  destruct (Z.lt_dec f MemNumPhys), (Z.le_dec 0%Z f).
-  - discriminate.
-  - contradiction.
-  - contradiction.
-  - contradiction.
-Defined. *)
-
-(* Proof.
-  apply finz_to_phys_addr.
-  apply finz_of_virt_addr in v.
-  destruct v.
-  rewrite -> Z.ltb_lt in finz_lt.
-  apply Z.lt_le_trans with _ _ MemNumPhys in finz_lt.
-  - rewrite <- Z.ltb_lt in finz_lt.
-    exact (finz.FinZ z finz_lt finz_nonneg).
-  - exact phys_fits_in_virt.
-Qed. *)
-
 Global Lemma TEMP_virt_to_phys_eq (a b : VirtAddr) :
   a = b <->
   TEMP_virt_to_phys a = TEMP_virt_to_phys b.
@@ -426,65 +405,12 @@ Proof.
   simpl in *. subst zb.
   repeat f_equal; apply eq_proofs_unicity; decide equality.
 Qed.
-  
-  
-  Unset Printing Notations.
-    apply (finz_unique fa fb _ _ _ _) in H1.
-    destruct fa as [za ltba nzba], fb as [zb ltbb nzbb]. simpl in *.
-  
-  
-  destruct (@finz_eq_dec MemNumVirt) with fa fb. auto. destruct n. 
-  
-  
-    destruct fa as [za ltba nzba], fb as [zb ltbb nzbb]. simpl in *.
-    subst zb.
-  Unset Printing Notations.
-  
-   f_equal. simpl in *. apply H1. 
-  
-  
-  
-  
-  destruct a as [fa], b as [fb].
-    generalize (finz_spec fa); intros [lta nza].
-    generalize (finz_spec fb); intros [ltb nzb].
-    destruct fa as [za ltba nzba], fb as [zb ltbb nzbb].
-    unfold TEMP_virt_to_phys, finz_of_virt_addr, finz_to_phys_addr, finz.of_z in *.
-    simpl in *.
-    Unset Printing Notations.
-    
-    destruct (Z.lt_dec).
-  
-  
-  
-    unfold TEMP_virt_to_phys, finz_of_virt_addr, finz_to_phys_addr, finz.of_z in H.
-    simpl in H.
-    destruct (Z.lt_dec) as [ | n].
-    +admit.
-    + unfold not in n.  
-    
-    destruct (Z.le_dec) as [ | n]; last destruct n.
-    destruct (Z.lt_dec) as [ | n]; last destruct n.
-    destruct (Z.le_dec) as [ | n]; last destruct n.
-  
-  
-    unfold TEMP_virt_to_phys, finz_of_virt_addr, finz_to_phys_addr, finz.of_z in H. simpl in H.
-    destruct (Z.lt_dec z MemNumPhys) as [ | n]; last destruct n.
-    destruct (Z.le_dec 0%Z z) as [ | n]; last destruct n.
-    destruct (Z.lt_dec z0 MemNumPhys) as [ | n]; last destruct n.
-    destruct (Z.le_dec 0%Z z0) as [ | n]; last destruct n.
-    (* destruct (Z.ltb_lt z MemNumPhys), (Z.ltb_lt z0 MemNumPhys), (Z.leb_le 0 z), (Z.leb_le 0 z0). *)
-    inversion H. subst z0.
-    generalize dependent finz_nonneg.
-    generalize dependent finz_nonneg0.
-    destruct ((z <? MemNumVirt)%Z).
-Qed.
 
 Global Lemma TEMP_virt_to_phys_neq (a b : VirtAddr) :
-  TEMP_virt_to_phys a ≠ TEMP_virt_to_phys b ->
-  a ≠ b.
+  a ≠ b  <->
+  TEMP_virt_to_phys a ≠ TEMP_virt_to_phys b.
 Proof.
-  intros. intro. apply TEMP_virt_to_phys_eq in H0. contradiction.
+  split; intros; intro H'; apply TEMP_virt_to_phys_eq in H'; contradiction.
 Qed.
   
 
