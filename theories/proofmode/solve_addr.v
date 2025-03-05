@@ -22,6 +22,8 @@ Ltac unfold_phys_addr :=
     f_equal
   | H : PhysAddrCons _ = PhysAddrCons _ |- _ =>
     injection H as H
+  | |- PhysAddrCons _ ≠ PhysAddrCons _ =>
+    intro
     
   | H : finz_to_phys_addr_opt ?f = _ |- _ =>
     let eq := fresh "Heq" in
@@ -48,6 +50,8 @@ Ltac unfold_virt_addr :=
     f_equal
   | H : VirtAddrCons _ = VirtAddrCons _ |- _ =>
     injection H as H
+  | |- VirtAddrCons _ ≠ VirtAddrCons _ =>
+    intro
     
   | H : finz_to_virt_addr_opt ?f = _ |- _ =>
     let eq := fresh "Heq" in

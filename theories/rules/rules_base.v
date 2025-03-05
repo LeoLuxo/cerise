@@ -165,7 +165,7 @@ Section cap_lang_rules.
 
   (* ------------------------- memory points-to --------------------------------- *)
 
-  Lemma addr_dupl_false a w1 w2 :
+  Lemma addr_dupl_false (a: PhysAddr) w1 w2 :
     a ↦ₐ w1 -∗ a ↦ₐ w2 -∗ False.
   Proof.
     iIntros "Ha1 Ha2".
@@ -296,13 +296,13 @@ Section cap_lang_rules.
   Qed.
 
   Lemma memMap_resource_0  :
-        True ⊣⊢ ([∗ map] a↦w ∈ ∅, a ↦ₐ w).
+        True ⊣⊢ ([∗ map] (a:PhysAddr)↦w ∈ ∅, a ↦ₐ w).
   Proof.
     by rewrite big_sepM_empty.
   Qed.
 
   Lemma memMap_resource_1 (a : PhysAddr) (w : Word)  :
-        a ↦ₐ w  ⊣⊢ ([∗ map] a↦w ∈ <[a:=w]> ∅, a ↦ₐ w)%I.
+        a ↦ₐ w  ⊣⊢ ([∗ map] (a:PhysAddr)↦w ∈ <[a:=w]> ∅, a ↦ₐ w)%I.
   Proof.
     rewrite big_sepM_delete; last by apply lookup_insert.
     rewrite delete_insert; last by auto. rewrite -memMap_resource_0.
@@ -312,7 +312,7 @@ Section cap_lang_rules.
   Qed.
 
   Lemma memMap_resource_1_dq (a : PhysAddr) (w : Word) dq :
-        a ↦ₐ{dq} w  ⊣⊢ ([∗ map] a↦w ∈ <[a:=w]> ∅, a ↦ₐ{dq} w)%I.
+        a ↦ₐ{dq} w  ⊣⊢ ([∗ map] (a:PhysAddr)↦w ∈ <[a:=w]> ∅, a ↦ₐ{dq} w)%I.
   Proof.
     rewrite big_sepM_delete; last by apply lookup_insert.
     rewrite delete_insert; last by auto. rewrite big_sepM_empty.
@@ -322,7 +322,7 @@ Section cap_lang_rules.
   Qed.
 
   Lemma memMap_resource_2ne (a1 a2 : PhysAddr) (w1 w2 : Word)  :
-    a1 ≠ a2 → ([∗ map] a↦w ∈  <[a1:=w1]> (<[a2:=w2]> ∅), a ↦ₐ w)%I ⊣⊢ a1 ↦ₐ w1 ∗ a2 ↦ₐ w2.
+    a1 ≠ a2 → ([∗ map] (a:PhysAddr)↦w ∈  <[a1:=w1]> (<[a2:=w2]> ∅), a ↦ₐ w)%I ⊣⊢ a1 ↦ₐ w1 ∗ a2 ↦ₐ w2.
   Proof.
     intros.
     rewrite big_sepM_delete; last by apply lookup_insert.
@@ -334,16 +334,16 @@ Section cap_lang_rules.
     - iDestruct "HH" as "[H1 H2]". iFrame.
   Qed.
 
-  Lemma address_neq a1 a2 w1 w2 :
+  Lemma address_neq (a1 a2 : PhysAddr) w1 w2 :
     a1 ↦ₐ w1 -∗ a2 ↦ₐ w2 -∗ ⌜a1 ≠ a2⌝.
   Proof.
     iIntros "Ha1 Ha2".
-    destruct (finz_eq_dec a1 a2); auto. subst.
+    destruct (PhysAddr_eq_dec a1 a2); auto. subst.
     iExFalso. iApply (addr_dupl_false with "[$Ha1] [$Ha2]").
   Qed.
 
   Lemma memMap_resource_2ne_apply (a1 a2 : PhysAddr) (w1 w2 : Word)  :
-    a1 ↦ₐ w1 -∗ a2 ↦ₐ w2 -∗ ([∗ map] a↦w ∈  <[a1:=w1]> (<[a2:=w2]> ∅), a ↦ₐ w) ∗ ⌜a1 ≠ a2⌝.
+    a1 ↦ₐ w1 -∗ a2 ↦ₐ w2 -∗ ([∗ map] (a:PhysAddr)↦w ∈  <[a1:=w1]> (<[a2:=w2]> ∅), a ↦ₐ w) ∗ ⌜a1 ≠ a2⌝.
   Proof.
     iIntros "Hi Hr2a".
     iDestruct (address_neq  with "Hi Hr2a") as %Hne; auto.
@@ -352,7 +352,7 @@ Section cap_lang_rules.
   Qed.
 
   Lemma memMap_resource_2gen (a1 a2 : PhysAddr) (w1 w2 : Word)  :
-    ( ∃ mem, ([∗ map] a↦w ∈ mem, a ↦ₐ w) ∧
+    ( ∃ mem, ([∗ map] (a:PhysAddr)↦w ∈ mem, a ↦ₐ w) ∧
        ⌜ if  (a2 =? a1)%pa
        then mem =  (<[a1:=w1]> ∅)
        else mem = <[a1:=w1]> (<[a2:=w2]> ∅)⌝
@@ -415,7 +415,7 @@ Section cap_lang_rules.
   Lemma memMap_resource_2gen_clater (a1 a2 : PhysAddr) (w1 w2 : Word) (Φ : PhysAddr -> Word -> iProp Σ)  :
     (▷ Φ a1 w1) -∗
     (if (a2 =? a1)%pa then emp else ▷ Φ a2 w2) -∗
-    (∃ mem, ▷ ([∗ map] a↦w ∈ mem, Φ a w) ∗
+    (∃ mem, ▷ ([∗ map] (a:PhysAddr)↦w ∈ mem, Φ a w) ∗
        ⌜if  (a2 =? a1)%pa
        then mem =  (<[a1:=w1]> ∅)
        else mem = <[a1:=w1]> (<[a2:=w2]> ∅)⌝
@@ -435,7 +435,7 @@ Section cap_lang_rules.
   Lemma memMap_resource_2gen_clater_dq (a1 a2 : PhysAddr) (dq1 dq2 : dfrac) (w1 w2 : Word) (Φ : PhysAddr -> dfrac → Word -> iProp Σ)  :
     (▷ Φ a1 dq1 w1) -∗
     (if (a2 =? a1)%pa then emp else ▷ Φ a2 dq2 w2) -∗
-    (∃ mem dfracs, ▷ ([∗ map] a↦wq ∈ prod_merge dfracs mem, Φ a wq.1 wq.2) ∗
+    (∃ mem dfracs, ▷ ([∗ map] (a:PhysAddr)↦wq ∈ prod_merge dfracs mem, Φ a wq.1 wq.2) ∗
        ⌜(if  (a2 =? a1)%pa
        then mem = (<[a1:=w1]> ∅)
        else mem = <[a1:=w1]> (<[a2:=w2]> ∅)) ∧
@@ -463,15 +463,15 @@ Section cap_lang_rules.
   Lemma memMap_delete:
     ∀(a : PhysAddr) (w : Word) mem0,
       mem0 !! a = Some w →
-      ([∗ map] a↦w ∈ mem0, a ↦ₐ w) ⊣⊢ (a ↦ₐ w ∗ ([∗ map] k↦y ∈ delete a mem0, k ↦ₐ y)).
+      ([∗ map] (a:PhysAddr)↦w ∈ mem0, a ↦ₐ w) ⊣⊢ (a ↦ₐ w ∗ ([∗ map] k↦y ∈ delete a mem0, k ↦ₐ y)).
   Proof.
     intros a w mem0 Hmem0a.
     rewrite -(big_sepM_delete _ _ a); auto.
   Qed.
 
   Lemma mem_remove_dq mem dq :
-    ([∗ map] a↦w ∈ mem, a ↦ₐ{dq} w) ⊣⊢
-    ([∗ map] a↦dw ∈ (prod_merge (create_gmap_default (elements (dom mem)) dq) mem), a ↦ₐ{dw.1} dw.2).
+    ([∗ map] (a:PhysAddr)↦w ∈ mem, a ↦ₐ{dq} w) ⊣⊢
+    ([∗ map] (a:PhysAddr)↦dw ∈ (prod_merge (create_gmap_default (elements (dom mem)) dq) mem), a ↦ₐ{dw.1} dw.2).
   Proof.
     iInduction (mem) as [|a k mem] "IH" using map_ind.
     - rewrite big_sepM_empty dom_empty_L elements_empty
@@ -498,7 +498,7 @@ Section cap_lang_rules.
     ∀ mem0 (m : Mem) (a : PhysAddr) (w : Word),
       mem0 !! a = Some w →
       gen_heap_interp m
-                   -∗ ([∗ map] a↦w ∈ mem0, a ↦ₐ w)
+                   -∗ ([∗ map] (a:PhysAddr)↦w ∈ mem0, a ↦ₐ w)
                    -∗ ⌜m !! a = Some w⌝.
   Proof.
     iIntros (mem0 m a w Hmem_pc) "Hm Hmem".
@@ -511,7 +511,7 @@ Section cap_lang_rules.
     ∀ mem0 (m : Mem) (a : PhysAddr) (w : Word) dq,
       mem0 !! a = Some (dq,w) →
       gen_heap_interp m
-                   -∗ ([∗ map] a↦dqw ∈ mem0, pointsto a dqw.1 dqw.2)
+                   -∗ ([∗ map] (a:PhysAddr)↦dqw ∈ mem0, pointsto a dqw.1 dqw.2)
                    -∗ ⌜m !! a = Some w⌝.
   Proof.
     iIntros (mem0 m a w dq Hmem_pc) "Hm Hmem".
@@ -524,9 +524,9 @@ Section cap_lang_rules.
       (σ : gmap PhysAddr Word) mem0 (l : PhysAddr) (v' v : Word),
       mem0 !! l = Some v' →
       gen_heap_interp σ
-      -∗ ([∗ map] a↦w ∈ mem0, a ↦ₐ w)
+      -∗ ([∗ map] (a:PhysAddr)↦w ∈ mem0, a ↦ₐ w)
       ==∗ gen_heap_interp (<[l:=v]> σ)
-          ∗ ([∗ map] a↦w ∈ <[l:=v]> mem0, a ↦ₐ w).
+          ∗ ([∗ map] (a:PhysAddr)↦w ∈ <[l:=v]> mem0, a ↦ₐ w).
   Proof.
     intros.
     rewrite (big_sepM_delete _ _ l);[|eauto].
@@ -597,10 +597,11 @@ Section cap_lang_rules.
   Lemma wp_halt E pc_p pc_b pc_e pc_a w :
     decodeInstrW w = Halt →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+    
 
-    {{{ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a ∗ pc_a ↦ₐ w }}}
+    {{{ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w }}}
       Instr Executable @ E
-    {{{ RET HaltedV; PC ↦ᵣ WCap pc_p pc_b pc_e pc_a ∗ pc_a ↦ₐ w }}}.
+    {{{ RET HaltedV; PC ↦ᵣ WCap pc_p pc_b pc_e pc_a ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w }}}.
   Proof.
     intros Hinstr Hvpc.
     iIntros (φ) "[Hpc Hpca] Hφ".
@@ -622,9 +623,9 @@ Section cap_lang_rules.
     decodeInstrW w = Fail →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
 
-    {{{ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a ∗ pc_a ↦ₐ w }}}
+    {{{ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w }}}
       Instr Executable @ E
-    {{{ RET FailedV; PC ↦ᵣ WCap pc_p pc_b pc_e pc_a ∗ pc_a ↦ₐ w }}}.
+    {{{ RET FailedV; PC ↦ᵣ WCap pc_p pc_b pc_e pc_a ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w }}}.
   Proof.
     intros Hinstr Hvpc.
     iIntros (φ) "[Hpc Hpca] Hφ".
