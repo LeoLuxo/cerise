@@ -93,7 +93,7 @@ Section cap_lang_rules.
   Lemma mem_neq_implies_allow_load_map:
     ∀ (regs : Reg)(mem : gmap PhysAddr Word)(r2 : RegName) (pc_a : VirtAddr)
       (w w' : Word) p b e a,
-      (TEMP_virt_to_phys a) ≠ (TEMP_virt_to_phys pc_a)
+      a ≠ pc_a
       → mem = <[(TEMP_virt_to_phys pc_a):=w]> (<[(TEMP_virt_to_phys a):=w']> ∅)
       → regs !! r2 = Some (WCap p b e a)
       → allow_load_map_or_true r2 regs mem.
@@ -102,7 +102,7 @@ Section cap_lang_rules.
     exists p,b,e,a; split.
     - unfold read_reg_inr. by rewrite Hreg2.
     - case_decide; last done.
-      exists w'. simplify_map_eq. auto. 
+      exists w'. apply TEMP_virt_to_phys_neq in H4. simplify_map_eq. auto.
   Qed.
 
   Lemma mem_implies_allow_load_map:
