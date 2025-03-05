@@ -10,7 +10,7 @@ Definition specN := nroot .@ "spec".
 (* heap and register CMRA for the specification *)
 (* These need to be notations rather than definitions, as it otherwise causes performance issues *)
 Notation memspecUR :=
-  (gmapUR Addr (prodR fracR (agreeR (leibnizO Word)))).
+  (gmapUR PhysAddr (prodR fracR (agreeR (leibnizO Word)))).
 Notation regspecUR :=
   (gmapUR RegName (prodR fracR (agreeR (leibnizO Word)))).
 Notation memreg_specUR := (prodUR regspecUR memspecUR).
@@ -51,7 +51,7 @@ End to_spec_map.
 Section definitionsS.
   Context `{cfgSG Σ, MachineParameters, invGS Σ}.
 
-  Definition memspec_pointsto (a : Addr) (q : Qp) (w : Word) : iProp Σ :=
+  Definition memspec_pointsto (a : PhysAddr) (q : Qp) (w : Word) : iProp Σ :=
     own cfg_name (◯ (ε, (∅,{[ a := (q, to_agree w) ]}))).
 
   Definition regspec_pointsto (r : RegName) (q : Qp) (w : Word) : iProp Σ :=
@@ -61,7 +61,7 @@ Section definitionsS.
     own cfg_name (◯ (Excl' e : optionUR (exclR (leibnizO expr)),(∅,∅))).
 
   (* The following invariant contains the authoritative view of specification state *)
-  Definition spec_res (e: leibnizO expr) (σ: gmap RegName Word * gmap Addr Word) : iProp Σ :=
+  Definition spec_res (e: leibnizO expr) (σ: gmap RegName Word * gmap PhysAddr Word) : iProp Σ :=
     (own cfg_name (● (Excl' e,(to_spec_map σ.1,to_spec_map σ.2))))%I.
   Definition spec_inv (ρ : cfg cap_lang) : iProp Σ :=
     (∃ e σ, spec_res e σ ∗ ⌜rtc erased_step ρ ([e],σ)⌝)%I.
@@ -126,7 +126,7 @@ Section definitionsS.
     iCombine "Hr1 Hr2" as "Hr".
     by iApply regspec_pointsto_valid.
   Qed.
-  Lemma regspec_pointsto_update e (σ : gmap RegName Word * gmap Addr Word) r (w w' : Word) :
+  Lemma regspec_pointsto_update e (σ : gmap RegName Word * gmap PhysAddr Word) r (w w' : Word) :
     spec_res e σ -∗ regspec_pointsto r 1 w ==∗ spec_res e (<[r:=w']> σ.1,σ.2) ∗ regspec_pointsto r 1 w'.
   Proof.
     iIntros "Hσ Hr".
@@ -161,7 +161,7 @@ Section definitionsS.
     iCombine "Hr1 Hr2" as "Hr".
     by iApply memspec_pointsto_valid.
   Qed.
-  Lemma memspec_pointsto_update e (σ : gmap RegName Word * gmap Addr Word) r (w w' : Word) :
+  Lemma memspec_pointsto_update e (σ : gmap RegName Word * gmap PhysAddr Word) r (w w' : Word) :
     spec_res e σ -∗ memspec_pointsto r 1 w ==∗ spec_res e (σ.1,<[r:=w']>σ.2) ∗ memspec_pointsto r 1 w'.
   Proof.
     iIntros "Hσ Hr".
@@ -306,7 +306,7 @@ Section cap_lang_spec_resources.
 
   (* ------------------------- address points-to --------------------------------- *)
 
-  Lemma memMap_resource_2ne (a1 a2 : Addr) (w1 w2 : Word)  :
+  Lemma memMap_resource_2ne (a1 a2 : PhysAddr) (w1 w2 : Word)  :
     a1 ≠ a2 → ([∗ map] a↦w ∈  <[a1:=w1]> (<[a2:=w2]> ∅), a ↣ₐ w)%I ⊣⊢ a1 ↣ₐ w1 ∗ a2 ↣ₐ w2.
   Proof.
     intros.
@@ -419,8 +419,8 @@ Section cap_lang_spec_resources.
   Qed.
 
   Lemma memspec_v_implies_m_v:
-    ∀ mem0 σ e' (b e a : Addr) (v : Word) q,
-      mem0 !! (TEMP_virt_to_phys a) = Some v
+    ∀ mem0 σ e' (b e a : PhysAddr) (v : Word) q,
+      mem0 !! a = Some v
       → ([∗ map] a0↦w ∈ mem0, memspec_pointsto a0 q w)
           -∗ spec_res e' σ -∗ ⌜σ.2 !! a = Some v⌝.
   Proof.
@@ -461,7 +461,7 @@ Section cap_lang_spec_resources.
     rewrite lookup_insert //.
   Qed.
 
-  Lemma spec_memMap_resource_2ne_apply (a1 a2 : Addr) (w1 w2 : Word)  :
+  Lemma spec_memMap_resource_2ne_apply (a1 a2 : PhysAddr) (w1 w2 : Word)  :
     a1 ↣ₐ w1 -∗ a2 ↣ₐ w2 -∗ ([∗ map] a↦w ∈  <[a1:=w1]> (<[a2:=w2]> ∅), a ↣ₐ w) ∗ ⌜a1 ≠ a2⌝.
   Proof.
     iIntros "Hi Hr2a".
@@ -579,9 +579,9 @@ Section cap_lang_spec_rules.
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
              ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
-             ∗ pc_a ↣ₐ w
+             ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
     ={E}=∗ ⤇ fill K (Instr Halted)
-         ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a ∗ pc_a ↣ₐ w.
+         ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w.
   Proof.
     intros Hinstr Hvpc Hnclose.
     iIntros "(Hinv & Hj & Hpc & Hpca)".
@@ -606,9 +606,9 @@ Section cap_lang_spec_rules.
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
              ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
-             ∗ pc_a ↣ₐ w
+             ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
     ={E}=∗ ⤇ fill K (Instr Failed)
-         ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a ∗ pc_a ↣ₐ w.
+         ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w.
   Proof.
     intros Hinstr Hvpc Hnclose.
     iIntros "(Hinv & Hj & Hpc & Hpca)".

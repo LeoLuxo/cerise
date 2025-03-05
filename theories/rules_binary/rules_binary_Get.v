@@ -25,8 +25,8 @@ Section cap_lang_spec_rules.
 
     nclose specN ⊆ Ep →
 
-    spec_ctx ∗ ⤇ fill K (Instr Executable) ∗ ▷ pc_a ↣ₐ w ∗ ▷ ([∗ map] k↦y ∈ regs, k ↣ᵣ y)
-    ={Ep}=∗ ∃ retv regs', ⤇ fill K (of_val retv) ∗ ⌜ Get_spec (decodeInstrW w) regs dst src regs' retv ⌝ ∗ pc_a ↣ₐ w ∗ ([∗ map] k↦y ∈ regs', k ↣ᵣ y).
+    spec_ctx ∗ ⤇ fill K (Instr Executable) ∗ ▷ (TEMP_virt_to_phys pc_a) ↣ₐ w ∗ ▷ ([∗ map] k↦y ∈ regs, k ↣ᵣ y)
+    ={Ep}=∗ ∃ retv regs', ⤇ fill K (of_val retv) ∗ ⌜ Get_spec (decodeInstrW w) regs dst src regs' retv ⌝ ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w ∗ ([∗ map] k↦y ∈ regs', k ↣ᵣ y).
   Proof.
     iIntros (Hdecode Hinstr Hvpc HPC Dregs Hnclose) "(Hinv & Hj & >Hpc_a & >Hmap)".
     iDestruct "Hinv" as (ρ) "Hinv". rewrite /spec_inv.
@@ -91,18 +91,18 @@ Section cap_lang_spec_rules.
     decodeInstrW w = get_i →
     is_Get get_i dst src →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-    (pc_a + 1)%a = Some pc_a' ->
+    (pc_a + 1)%va = Some pc_a' ->
     denote get_i wsrc = Some z →
     nclose specN ⊆ E →
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
              ∗ ▷ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
-             ∗ ▷ pc_a ↣ₐ w
+             ∗ ▷ (TEMP_virt_to_phys pc_a) ↣ₐ w
              ∗ ▷ src ↣ᵣ wsrc
              ∗ ▷ dst ↣ᵣ wdst
     ={E}=∗ ⤇ fill K (Instr NextI)
         ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a'
-        ∗ pc_a ↣ₐ w
+        ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
         ∗ src ↣ᵣ wsrc
         ∗ dst ↣ᵣ WInt z.
   Proof.

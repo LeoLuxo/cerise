@@ -23,8 +23,8 @@ Section cap_lang_spec_rules.
 
     nclose specN ⊆ Ep →
 
-    spec_ctx ∗ ⤇ fill K (Instr Executable) ∗ ▷ pc_a ↣ₐ w ∗ ▷ ([∗ map] k↦y ∈ regs, k ↣ᵣ y)
-    ={Ep}=∗ ∃ retv regs', ⌜ Subseg_spec regs dst src1 src2 regs' retv ⌝ ∗ ⤇ fill K (of_val retv) ∗ pc_a ↣ₐ w ∗ ([∗ map] k↦y ∈ regs', k ↣ᵣ y).
+    spec_ctx ∗ ⤇ fill K (Instr Executable) ∗ ▷ (TEMP_virt_to_phys pc_a) ↣ₐ w ∗ ▷ ([∗ map] k↦y ∈ regs, k ↣ᵣ y)
+    ={Ep}=∗ ∃ retv regs', ⌜ Subseg_spec regs dst src1 src2 regs' retv ⌝ ∗ ⤇ fill K (of_val retv) ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w ∗ ([∗ map] k↦y ∈ regs', k ↣ᵣ y).
   Proof.
     iIntros (Hinstr Hvpc HPC Dregs Hnclose) "(Hinv & Hj & >Hpc_a & >Hmap)".
     iDestruct "Hinv" as (ρ) "Hinv". rewrite /spec_inv.
@@ -221,18 +221,18 @@ Section cap_lang_spec_rules.
     z_to_addr n1 = Some a1 ∧ z_to_addr n2 = Some a2 →
     p ≠ machine_base.E →
     isWithin a1 a2 b e = true →
-    (pc_a + 1)%a = Some pc_a' →
+    (pc_a + 1)%va = Some pc_a' →
     nclose specN ⊆ E →
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
              ∗ ▷ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
-             ∗ ▷ pc_a ↣ₐ w
+             ∗ ▷ (TEMP_virt_to_phys pc_a) ↣ₐ w
              ∗ ▷ dst ↣ᵣ WCap p b e a
              ∗ ▷ r1 ↣ᵣ WInt n1
              ∗ ▷ r2 ↣ᵣ WInt n2
     ={E}=∗ ⤇ fill K (Instr NextI)
         ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a'
-        ∗ pc_a ↣ₐ w
+        ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
         ∗ r1 ↣ᵣ WInt n1
         ∗ r2 ↣ᵣ WInt n2
         ∗ dst ↣ᵣ WCap p a1 a2 a.

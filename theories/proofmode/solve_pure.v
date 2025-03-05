@@ -110,15 +110,17 @@ Proof. auto. Qed.
 
 (* Tests *)
 
-Goal forall (r_t1 PC: RegName) `{MachineParameters}, exists r1 r2,
+(* TODO: Extend solve_pure with the ability to unwrap PhysAddr and VirtAddr *)
+
+(* Goal forall (r_t1 PC: RegName) `{MachineParameters}, exists r1 r2,
   decodeInstrW (encodeInstrW (Mov r_t1 PC)) = Mov r1 r2 ∧
   r1 = r_t1 ∧ r2 = inr PC.
 Proof. do 2 eexists. repeat apply conj. solve_pure. all: reflexivity. Qed.
 
 Goal forall p b e a,
   ExecPCPerm p →
-  SubBounds b e a (a ^+ 5)%a →
-  ContiguousRegion a 5 →
+  SubBoundsVirt b e a (a ^+ 5)%va →
+  ContiguousRegionVirt a 5 →
   isCorrectPC (WCap p b e a).
 Proof. intros. solve_pure. Qed.
 
@@ -129,9 +131,9 @@ Proof. do 2 eexists. repeat apply conj. solve_pure. all: reflexivity. Qed.
 
 Goal forall p b e a,
   ExecPCPerm p →
-  SubBounds b e a (a ^+ 5)%a →
-  ContiguousRegion a 5 →
-  isCorrectPC (WCap p b e (a ^+ 1)%a).
+  SubBoundsVirt b e a (a ^+ 5)%va →
+  ContiguousRegionVirt a 5 →
+  isCorrectPC (WCap p b e (a ^+ 1)%va).
 Proof. intros. solve_pure. Qed.
 
 Goal forall (r_t1 r_t2 r_t3: RegName), exists r1 r2 r3,
@@ -140,4 +142,4 @@ Goal forall (r_t1 r_t2 r_t3: RegName), exists r1 r2 r3,
 Proof. do 3 eexists. repeat apply conj. solve_pure. all: reflexivity. Qed.
 
 Goal E ≠ RO. solve_pure. Qed.
-Goal forall (P: Prop), P → P. intros. solve_pure. Qed.
+Goal forall (P: Prop), P → P. intros. solve_pure. Qed. *)

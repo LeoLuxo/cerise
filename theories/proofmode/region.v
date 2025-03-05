@@ -20,8 +20,8 @@ Section region.
 
   (*--------------------------------------------------------------------------*)
 
-  Definition region_pointsto (b e : Addr) (ws : list Word) : iProp Σ :=
-    ([∗ list] k↦y1;y2 ∈ (finz.seq_between b e);ws, y1 ↦ₐ y2)%I.
+  Definition region_pointsto (b e : PhysAddr) (ws : list Word) : iProp Σ :=
+    ([∗ list] k↦y1;y2 ∈ (finz.seq_between (finz_of_phys_addr b) (finz_of_phys_addr e));ws, y1 ↦ₐ y2)%I.
 
   Definition included (b' e' : Addr) (b e : Addr) : iProp Σ :=
     (⌜(b <= b')%a⌝ ∧ (⌜e' <= e⌝)%a)%I.

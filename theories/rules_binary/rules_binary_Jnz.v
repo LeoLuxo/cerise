@@ -23,9 +23,9 @@ Section cap_lang_spec_rules.
 
     nclose specN ⊆ Ep →
 
-    spec_ctx ∗ ⤇ fill K (Instr Executable) ∗ ▷ pc_a ↣ₐ w ∗ ▷ ([∗ map] k↦y ∈ regs, k ↣ᵣ y)
+    spec_ctx ∗ ⤇ fill K (Instr Executable) ∗ ▷ (TEMP_virt_to_phys pc_a) ↣ₐ w ∗ ▷ ([∗ map] k↦y ∈ regs, k ↣ᵣ y)
     ={Ep}=∗ ∃ retv regs', ⌜ Jnz_spec regs dst src regs' retv ⌝ ∗
-                            ⤇ fill K (of_val retv) ∗ pc_a ↣ₐ w ∗ [∗ map] k↦y ∈ regs', k ↣ᵣ y.
+                            ⤇ fill K (of_val retv) ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w ∗ [∗ map] k↦y ∈ regs', k ↣ᵣ y.
   Proof.
     iIntros (Hinstr Hvpc HPC Dregs Hnclose) "(Hinv & Hj & >Hpc_a & >Hmap)".
     iDestruct "Hinv" as (ρ) "Hinv". rewrite /spec_inv.
@@ -79,17 +79,17 @@ Section cap_lang_spec_rules.
   Lemma step_jnz_success_next E K r1 r2 pc_p pc_b pc_e pc_a pc_a' w w1 :
     decodeInstrW w = Jnz r1 r2 →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-    (pc_a + 1)%a = Some pc_a' →
+    (pc_a + 1)%va = Some pc_a' →
     nclose specN ⊆ E →
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
              ∗ ▷ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
-             ∗ ▷ pc_a ↣ₐ w
+             ∗ ▷ (TEMP_virt_to_phys pc_a) ↣ₐ w
              ∗ ▷ r1 ↣ᵣ w1
              ∗ ▷ r2 ↣ᵣ WInt 0%Z
     ={E}=∗ ⤇ fill K (Instr NextI)
          ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a'
-         ∗ pc_a ↣ₐ w
+         ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
          ∗ r1 ↣ᵣ w1
          ∗ r2 ↣ᵣ WInt 0%Z.
   Proof.
@@ -113,12 +113,12 @@ Section cap_lang_spec_rules.
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
              ∗ ▷ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
-             ∗ ▷ pc_a ↣ₐ w
+             ∗ ▷ (TEMP_virt_to_phys pc_a) ↣ₐ w
              ∗ ▷ r1 ↣ᵣ w1
              ∗ ▷ r2 ↣ᵣ w2
     ={E}=∗ ⤇ fill K (Instr NextI)
          ∗ PC ↣ᵣ updatePcPerm w1
-         ∗ pc_a ↣ₐ w
+         ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
          ∗ r1 ↣ᵣ w1
          ∗ r2 ↣ᵣ w2.
   Proof.

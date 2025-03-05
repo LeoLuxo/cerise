@@ -22,8 +22,8 @@ Section cap_lang_spec_rules.
 
     nclose specN ⊆ Ep →
 
-    spec_ctx ∗ ⤇ fill K (Instr Executable) ∗ pc_a ↣ₐ w ∗ ([∗ map] k↦y ∈ regs, k ↣ᵣ y)
-    ={Ep}=∗ ∃ retv regs', ⌜ Restrict_spec regs dst src regs' retv ⌝ ∗ ⤇ fill K (of_val retv) ∗ pc_a ↣ₐ w ∗ ([∗ map] k↦y ∈ regs', k ↣ᵣ y).
+    spec_ctx ∗ ⤇ fill K (Instr Executable) ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w ∗ ([∗ map] k↦y ∈ regs, k ↣ᵣ y)
+    ={Ep}=∗ ∃ retv regs', ⌜ Restrict_spec regs dst src regs' retv ⌝ ∗ ⤇ fill K (of_val retv) ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w ∗ ([∗ map] k↦y ∈ regs', k ↣ᵣ y).
   Proof.
     iIntros (Hinstr Hvpc HPC Dregs Hcls) "(#Hinv & Hj & Hpc_a & Hmap)".
     iDestruct "Hinv" as (ρ) "Hinv". rewrite /spec_inv.
@@ -137,18 +137,18 @@ Section cap_lang_spec_rules.
   Lemma step_restrict_success_z Ep K pc_p pc_b pc_e pc_a pc_a' w r1 p b e a z :
      decodeInstrW w = Restrict r1 (inl z) →
      isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-     (pc_a + 1)%a = Some pc_a' →
+     (pc_a + 1)%va = Some pc_a' →
      PermFlowsTo (decodePerm z) p = true →
      p ≠ E →
      nclose specN ⊆ Ep →
 
      spec_ctx ∗ ⤇ fill K (Instr Executable)
               ∗ ▷ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
-              ∗ ▷ pc_a ↣ₐ w
+              ∗ ▷ (TEMP_virt_to_phys pc_a) ↣ₐ w
               ∗ ▷ r1 ↣ᵣ WCap p b e a
      ={Ep}=∗ ⤇ fill K (Instr NextI)
          ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a'
-         ∗ pc_a ↣ₐ w
+         ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
          ∗ r1 ↣ᵣ WCap (decodePerm z) b e a.
   Proof.
     iIntros (Hinstr Hvpc Hpca' Hflows HpE Hnclose) "(Hown & Hj & >HPC & >Hpc_a & >Hr1)".

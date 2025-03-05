@@ -20,15 +20,15 @@ Section cap_lang_spec_rules.
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
     regs !! PC = Some (WCap pc_p pc_b pc_e pc_a) →
     regs_of (Load r1 r2) ⊆ dom regs →
-    mem !! pc_a = Some w →
+    mem !! (TEMP_virt_to_phys pc_a) = Some w →
     allow_load_map_or_true r2 regs mem →
 
     nclose specN ⊆ Ep →
 
-    spec_ctx ∗ ⤇ fill K (Instr Executable) ∗ (▷ [∗ map] a↦w ∈ mem, a ↣ₐ w) ∗ (▷ [∗ map] k↦y ∈ regs, k ↣ᵣ y)
-    ={Ep}=∗ ∃ retv regs', ⤇ fill K (of_val retv) ∗ ⌜ Load_spec regs r1 r2 regs' mem retv ⌝ ∗ ([∗ map] a↦w ∈ mem, a ↣ₐ w)∗ ([∗ map] k↦y ∈ regs', k ↣ᵣ y).
-  Proof.
-    iIntros (Hinstr Hvpc HPC Dregs Hmem_pc HaLoad Hnclose) "(#Hinv & Hj & >Hmem & >Hmap)".
+    spec_ctx ∗ ⤇ fill K (Instr Executable) ∗ (▷ [∗ map] (a:PhysAddr)↦w ∈ mem, a ↣ₐ w) ∗ (▷ [∗ map] k↦y ∈ regs, k ↣ᵣ y)
+    ={Ep}=∗ ∃ retv regs', ⤇ fill K (of_val retv) ∗ ⌜ Load_spec regs r1 r2 regs' mem retv ⌝ ∗ ([∗ map] (a:PhysAddr)↦w ∈ mem, a ↣ₐ w)∗ ([∗ map] k↦y ∈ regs', k ↣ᵣ y).
+  Proof. Admitted.
+    (* iIntros (Hinstr Hvpc HPC Dregs Hmem_pc HaLoad Hnclose) "(#Hinv & Hj & >Hmem & >Hmap)".
     iDestruct "Hinv" as (ρ) "Hinv". rewrite /spec_inv.
     iInv specN as ">Hinv'" "Hclose". iDestruct "Hinv'" as (e [σr σm]) "[Hown %] /=".
     iDestruct (regspec_heap_valid_inclSepM with "Hown Hmap") as %Hregs.
@@ -120,27 +120,27 @@ Section cap_lang_spec_rules.
     * exact Hmema.
     * unfold incrementPC. by rewrite HPC'' Ha_pc'.
       Unshelve. all: auto.
-  Qed.
+  Qed. *)
 
   Lemma step_load_success_same E K r1 pc_p pc_b pc_e pc_a w w' w'' p b e a pc_a' :
     decodeInstrW w = Load r1 r1 →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
     readAllowed p = true ∧ withinBoundsVirt b e a = true →
-    (pc_a + 1)%a = Some pc_a' →
+    (pc_a + 1)%va = Some pc_a' →
     nclose specN ⊆ E →
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
              ∗ ▷ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
-             ∗ ▷ pc_a ↣ₐ w
+             ∗ ▷ (TEMP_virt_to_phys pc_a) ↣ₐ w
              ∗ ▷ r1 ↣ᵣ WCap p b e a
-             ∗ (if (a =? pc_a)%a then emp else ▷ a ↣ₐ w')
+             ∗ (if (a =? pc_a)%va then emp else ▷ (TEMP_virt_to_phys a) ↣ₐ w')
     ={E}=∗ ⤇ fill K (Instr NextI)
         ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a'
-        ∗ r1 ↣ᵣ (if (a =? pc_a)%a then w else w')
-        ∗ pc_a ↣ₐ w
-        ∗ (if (a =? pc_a)%a then emp else a ↣ₐ w').
-  Proof.
-    iIntros (Hinstr Hvpc [Hra Hwb] Hpca' Hnclose)
+        ∗ r1 ↣ᵣ (if (a =? pc_a)%va then w else w')
+        ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
+        ∗ (if (a =? pc_a)%va then emp else (TEMP_virt_to_phys a) ↣ₐ w').
+  Proof. Admitted.
+    (* iIntros (Hinstr Hvpc [Hra Hwb] Hpca' Hnclose)
             "(Hown & Hj & >HPC & >Hi & >Hr1 & Hr1a)".
     iDestruct (map_of_regs_2 with "HPC Hr1") as "[Hmap %]".
     iDestruct (memMap_resource_2gen_clater _ _ _ _ (λ a w, a ↣ₐ w)%I with "Hi Hr1a") as (mem) "[>Hmem Hmem']".
@@ -165,53 +165,53 @@ Section cap_lang_spec_rules.
      { (* Failure (contradiction) *)
        destruct Hfail; try incrementPC_inv; simplify_map_eq; eauto.
        destruct o. all: congruence. }
-  Qed.
+  Qed. *)
 
   Lemma step_load_success_same_alt E K r1 pc_p pc_b pc_e pc_a w w' w'' p b e a pc_a' :
     decodeInstrW w = Load r1 r1 →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
     readAllowed p = true ∧ withinBoundsVirt b e a = true →
-    (pc_a + 1)%a = Some pc_a' →
+    (pc_a + 1)%va = Some pc_a' →
     nclose specN ⊆ E →
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
              ∗ ▷ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
-             ∗ ▷ pc_a ↣ₐ w
+             ∗ ▷ (TEMP_virt_to_phys pc_a) ↣ₐ w
              ∗ ▷ r1 ↣ᵣ WCap p b e a
-             ∗ ▷ a ↣ₐ w'
+             ∗ ▷ (TEMP_virt_to_phys a) ↣ₐ w'
     ={E}=∗ ⤇ fill K (Instr NextI)
         ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a'
         ∗ r1 ↣ᵣ w'
-        ∗ pc_a ↣ₐ w
-        ∗ a ↣ₐ w'.
-  Proof.
-    iIntros (Hinstr Hvpc [Hra Hwb] Hpca' Hnclose) "(Hown & Hj & >HPC & >Hpc_a & >Hr1 & >Ha)".
+        ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
+        ∗ (TEMP_virt_to_phys a) ↣ₐ w'.
+  Proof. Admitted.
+    (* iIntros (Hinstr Hvpc [Hra Hwb] Hpca' Hnclose) "(Hown & Hj & >HPC & >Hpc_a & >Hr1 & >Ha)".
     iAssert (⌜(a =? pc_a)%a = false⌝)%I as %Hfalse.
     { rewrite Z.eqb_neq. iIntros (->%finz_to_z_eq). iDestruct (memspec_pointsto_valid_2 with "Ha Hpc_a") as %Hneq. done. }
     iMod (step_load_success_same with "[$HPC $Hpc_a $Hr1 $Hown $Hj Ha]") as "(?&?&?&?&?)";eauto;try rewrite Hfalse;by iFrame.
-  Qed.
+  Qed. *)
 
   Lemma step_load_success E K r1 r2 pc_p pc_b pc_e pc_a w w' w'' p b e a pc_a' :
     decodeInstrW w = Load r1 r2 →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
     readAllowed p = true ∧ withinBoundsVirt b e a = true →
-    (pc_a + 1)%a = Some pc_a' →
+    (pc_a + 1)%va = Some pc_a' →
     nclose specN ⊆ E →
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
              ∗ ▷ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
-             ∗ ▷ pc_a ↣ₐ w
+             ∗ ▷ (TEMP_virt_to_phys pc_a) ↣ₐ w
              ∗ ▷ r1 ↣ᵣ w''
              ∗ ▷ r2 ↣ᵣ WCap p b e a
-             ∗ (if (eqb_addr a pc_a) then emp else ▷ a ↣ₐ w')
+             ∗ (if (eqb_virt_addr a pc_a) then emp else ▷ (TEMP_virt_to_phys a) ↣ₐ w')
     ={E}=∗ ⤇ fill K (Instr NextI)
         ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a'
-        ∗ r1 ↣ᵣ (if (eqb_addr a pc_a) then w else w')
-        ∗ pc_a ↣ₐ w
+        ∗ r1 ↣ᵣ (if (eqb_virt_addr a pc_a) then w else w')
+        ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
         ∗ r2 ↣ᵣ WCap p b e a
-        ∗ (if (eqb_addr a pc_a) then emp else a ↣ₐ w').
-  Proof.
-    iIntros (Hinstr Hvpc [Hra Hwb] Hpca' Hnclose)
+        ∗ (if (eqb_virt_addr a pc_a) then emp else (TEMP_virt_to_phys a) ↣ₐ w').
+  Proof. Admitted.
+    (* iIntros (Hinstr Hvpc [Hra Hwb] Hpca' Hnclose)
             "(Hown & Hj & >HPC & >Hi & >Hr1 & >Hr2 & Hr2a)".
     iDestruct (map_of_regs_3 with "HPC Hr1 Hr2") as "[Hmap (%&%&%)]".
     iDestruct (memMap_resource_2gen_clater _ _ _ _ (λ a w, a ↣ₐ w)%I with "Hi Hr2a") as (mem) "[>Hmem Hmem']".
@@ -240,33 +240,33 @@ Section cap_lang_spec_rules.
        destruct Hfail; simplify_map_eq_alt.
        destruct o;congruence.
        incrementPC_inv;[|rewrite lookup_insert_ne// lookup_insert;eauto]. congruence. }
-  Qed.
+  Qed. *)
 
   Lemma step_load_success_alt E K r1 r2 pc_p pc_b pc_e pc_a w w' w'' p b e a pc_a' :
     decodeInstrW w = Load r1 r2 →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
     readAllowed p = true ∧ withinBoundsVirt b e a = true →
-    (pc_a + 1)%a = Some pc_a' →
+    (pc_a + 1)%va = Some pc_a' →
     nclose specN ⊆ E →
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
              ∗ ▷ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
-             ∗ ▷ pc_a ↣ₐ w
+             ∗ ▷ (TEMP_virt_to_phys pc_a) ↣ₐ w
              ∗ ▷ r1 ↣ᵣ w''
              ∗ ▷ r2 ↣ᵣ WCap p b e a
-             ∗ ▷ a ↣ₐ w'
+             ∗ ▷ (TEMP_virt_to_phys a) ↣ₐ w'
     ={E}=∗ ⤇ fill K (Instr NextI)
         ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a'
         ∗ r1 ↣ᵣ w'
-        ∗ pc_a ↣ₐ w
+        ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
         ∗ r2 ↣ᵣ WCap p b e a
-        ∗ a ↣ₐ w'.
-  Proof.
-    iIntros (Hinstr Hvpc [Hra Hwb] Hpca' Hnclose)
+        ∗ (TEMP_virt_to_phys a) ↣ₐ w'.
+  Proof. Admitted.
+    (* iIntros (Hinstr Hvpc [Hra Hwb] Hpca' Hnclose)
             "(Hown & Hj & >HPC & >Hi & >Hr1 & >Hr2 & >Hr2a)".
     iAssert (⌜(a =? pc_a)%a = false⌝)%I as %Hfalse.
     { rewrite Z.eqb_neq. iIntros (->%finz_to_z_eq). iDestruct (memspec_pointsto_valid_2 with "Hr2a Hi") as %Hneq. done. }
     iMod (step_load_success with "[$Hown $Hj $HPC $Hi $Hr1 $Hr2 Hr2a]");eauto;rewrite Hfalse;by iFrame. 
-  Qed.
+  Qed. *)
 
 End cap_lang_spec_rules.

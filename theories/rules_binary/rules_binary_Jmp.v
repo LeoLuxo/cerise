@@ -22,11 +22,11 @@ Section cap_lang_spec_rules.
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
              ∗ ▷ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
-             ∗ ▷ pc_a ↣ₐ w
+             ∗ ▷ (TEMP_virt_to_phys pc_a) ↣ₐ w
              ∗ ▷ r ↣ᵣ w'
     ={E}=∗ ⤇ fill K (Instr NextI)
         ∗ PC ↣ᵣ updatePcPerm w'
-        ∗ pc_a ↣ₐ w
+        ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
         ∗ r ↣ᵣ w'. 
   Proof.
     iIntros (Hinstr Hvpc Hnclose) "(Hinv & Hj & >HPC & >Hpc_a & >Hr)".
@@ -62,10 +62,10 @@ Section cap_lang_spec_rules.
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
              ∗ ▷ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
-             ∗ ▷ pc_a ↣ₐ w
+             ∗ ▷ (TEMP_virt_to_phys pc_a) ↣ₐ w
     ={E}=∗  ⤇ fill K (Instr NextI)
         ∗ PC ↣ᵣ updatePcPerm (WCap pc_p pc_b pc_e pc_a)
-        ∗ pc_a ↣ₐ w.
+        ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w.
   Proof.
     iIntros (Hinstr Hvpc Hnclose) "(Hinv & Hj & >HPC & >Hpc_a)".
     iDestruct "Hinv" as (ρ) "Hinv". rewrite /spec_inv.

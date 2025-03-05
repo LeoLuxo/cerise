@@ -23,9 +23,9 @@ Section cap_lang_spec_rules.
 
     nclose specN ⊆ Ep →
 
-    spec_ctx ∗ ⤇ fill K (Instr Executable) ∗ ▷ pc_a ↣ₐ w ∗ ▷ ([∗ map] k↦y ∈ regs, k ↣ᵣ y)
+    spec_ctx ∗ ⤇ fill K (Instr Executable) ∗ ▷ (TEMP_virt_to_phys pc_a) ↣ₐ w ∗ ▷ ([∗ map] k↦y ∈ regs, k ↣ᵣ y)
     ={Ep}=∗ ∃ retv regs', ⌜ AddSubLt_spec (decodeInstrW w) regs dst arg1 arg2 regs' retv ⌝ ∗
-                            ⤇ fill K (of_val retv) ∗ pc_a ↣ₐ w ∗ [∗ map] k↦y ∈ regs', k ↣ᵣ y.
+                            ⤇ fill K (of_val retv) ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w ∗ [∗ map] k↦y ∈ regs', k ↣ᵣ y.
   Proof.
     iIntros (Hdecode Hinstr Hvpc HPC Dregs Hnclose) "(Hinv & Hj & >Hpc_a & >Hmap)".
     iDestruct "Hinv" as (ρ) "Hinv". rewrite /spec_inv.
@@ -105,7 +105,7 @@ Section cap_lang_spec_rules.
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
     nclose specN ⊆ E →
 
-    spec_ctx ∗ ⤇ fill K (Instr Executable) ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a ∗ pc_a ↣ₐ w ∗ dst ↣ᵣ wdst
+    spec_ctx ∗ ⤇ fill K (Instr Executable) ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w ∗ dst ↣ᵣ wdst
              ∗ r2 ↣ᵣ WCap p b e a
     ={E}=∗ ⤇ fill K (of_val FailedV).
   Proof.
@@ -121,19 +121,19 @@ Section cap_lang_spec_rules.
   Lemma step_add_sub_lt_success_z_r E K dst pc_p pc_b pc_e pc_a w wdst ins n1 r2 n2 pc_a' :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inl n1) (inr r2) →
-    (pc_a + 1)%a = Some pc_a' →
+    (pc_a + 1)%va = Some pc_a' →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) ->
     nclose specN ⊆ E →
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
              ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
-             ∗ pc_a ↣ₐ w
+             ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
              ∗ r2 ↣ᵣ WInt n2
              ∗ dst ↣ᵣ wdst
     ={E}=∗
              ⤇ fill K (of_val NextIV)
              ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a'
-             ∗ pc_a ↣ₐ w
+             ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
              ∗ r2 ↣ᵣ WInt n2
              ∗ dst ↣ᵣ WInt (denote ins n1 n2).
   Proof.
@@ -155,19 +155,19 @@ Section cap_lang_spec_rules.
   Lemma step_add_sub_lt_success_dst_r E K dst pc_p pc_b pc_e pc_a w ins n1 r2 n2 pc_a' :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inr dst) (inr r2) →
-    (pc_a + 1)%a = Some pc_a' →
+    (pc_a + 1)%va = Some pc_a' →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) ->
 
     nclose specN ⊆ E →
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
              ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
-             ∗ pc_a ↣ₐ w
+             ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
              ∗ r2 ↣ᵣ WInt n2
              ∗ dst ↣ᵣ WInt n1
     ={E}=∗ ⤇ fill K (Instr NextI)
         ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a'
-        ∗ pc_a ↣ₐ w
+        ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
         ∗ r2 ↣ᵣ WInt n2
         ∗ dst ↣ᵣ WInt (denote ins n1 n2).
   Proof.
@@ -190,17 +190,17 @@ Section cap_lang_spec_rules.
   Lemma step_add_sub_lt_success_z_dst E K dst pc_p pc_b pc_e pc_a w ins n1 n2 pc_a' :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inl n1) (inr dst) →
-    (pc_a + 1)%a = Some pc_a' →
+    (pc_a + 1)%va = Some pc_a' →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) ->
     nclose specN ⊆ E →
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
              ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
-             ∗ pc_a ↣ₐ w
+             ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
              ∗ dst ↣ᵣ WInt n2
     ={E}=∗ ⤇ fill K (Instr NextI)
         ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a'
-        ∗ pc_a ↣ₐ w
+        ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
         ∗ dst ↣ᵣ WInt (denote ins n1 n2).
   Proof.
     iIntros (Hdecode Hinstr Hpc_a Hvpc Hnclose) "(Hown & Hj & HPC & Hpc_a & Hdst)".
@@ -221,17 +221,17 @@ Section cap_lang_spec_rules.
   Lemma step_add_sub_lt_success_dst_z E K dst pc_p pc_b pc_e pc_a w ins n1 n2 pc_a' :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inr dst) (inl n2) →
-    (pc_a + 1)%a = Some pc_a' →
+    (pc_a + 1)%va = Some pc_a' →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) ->
     nclose specN ⊆ E →
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
              ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
-             ∗ pc_a ↣ₐ w
+             ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
              ∗ dst ↣ᵣ WInt n1
     ={E}=∗ ⤇ fill K (Instr NextI)
         ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a'
-        ∗ pc_a ↣ₐ w
+        ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
         ∗ dst ↣ᵣ WInt (denote ins n1 n2).
   Proof.
     iIntros (Hdecode Hinstr Hpc_a Hvpc Hnclose) "(Hown & Hj & HPC & Hpc_a & Hdst)".

@@ -156,7 +156,7 @@ Section cap_lang_rules.
   Lemma wp_add_sub_lt_success_z_z E dst pc_p pc_b pc_e pc_a w wdst ins n1 n2 pc_a' :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inl n1) (inl n2) →
-    (pc_a + 1)%a = Some pc_a' →
+    (pc_a + 1)%va = Some pc_a' →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) ->
 
     {{{ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
@@ -188,7 +188,7 @@ Section cap_lang_rules.
   Lemma wp_add_sub_lt_success_r_z E dst pc_p pc_b pc_e pc_a w wdst ins r1 n1 n2 pc_a' :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inr r1) (inl n2) →
-    (pc_a + 1)%a = Some pc_a' →
+    (pc_a + 1)%va = Some pc_a' →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) ->
 
     {{{ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
@@ -223,7 +223,7 @@ Section cap_lang_rules.
   Lemma wp_add_sub_lt_success_z_r E dst pc_p pc_b pc_e pc_a w wdst ins n1 r2 n2 pc_a' :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inl n1) (inr r2) →
-    (pc_a + 1)%a = Some pc_a' →
+    (pc_a + 1)%va = Some pc_a' →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) ->
 
     {{{ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
@@ -258,7 +258,7 @@ Section cap_lang_rules.
   Lemma wp_add_sub_lt_success_r_r E dst pc_p pc_b pc_e pc_a w wdst ins r1 n1 r2 n2 pc_a' :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inr r1) (inr r2) →
-    (pc_a + 1)%a = Some pc_a' →
+    (pc_a + 1)%va = Some pc_a' →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) ->
 
     {{{ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
@@ -295,7 +295,7 @@ Section cap_lang_rules.
   Lemma wp_add_sub_lt_success_r_r_same E dst pc_p pc_b pc_e pc_a w wdst ins r n pc_a' :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inr r) (inr r) →
-    (pc_a + 1)%a = Some pc_a' →
+    (pc_a + 1)%va = Some pc_a' →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) ->
 
     {{{ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
@@ -330,7 +330,7 @@ Section cap_lang_rules.
   Lemma wp_add_sub_lt_success_dst_z E dst pc_p pc_b pc_e pc_a w ins n1 n2 pc_a' :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inr dst) (inl n2) →
-    (pc_a + 1)%a = Some pc_a' →
+    (pc_a + 1)%va = Some pc_a' →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) ->
 
     {{{ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
@@ -362,7 +362,7 @@ Section cap_lang_rules.
   Lemma wp_add_sub_lt_success_z_dst E dst pc_p pc_b pc_e pc_a w ins n1 n2 pc_a' :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inl n1) (inr dst) →
-    (pc_a + 1)%a = Some pc_a' →
+    (pc_a + 1)%va = Some pc_a' →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) ->
 
     {{{ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
@@ -394,7 +394,7 @@ Section cap_lang_rules.
   Lemma wp_add_sub_lt_success_dst_r E dst pc_p pc_b pc_e pc_a w ins n1 r2 n2 pc_a' :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inr dst) (inr r2) →
-    (pc_a + 1)%a = Some pc_a' →
+    (pc_a + 1)%va = Some pc_a' →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) ->
 
     {{{ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
@@ -429,7 +429,7 @@ Section cap_lang_rules.
   Lemma wp_add_sub_lt_success_r_dst E dst pc_p pc_b pc_e pc_a w ins r1 n1 n2 pc_a' :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inr r1) (inr dst) →
-    (pc_a + 1)%a = Some pc_a' →
+    (pc_a + 1)%va = Some pc_a' →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) ->
 
     {{{ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
@@ -464,7 +464,7 @@ Section cap_lang_rules.
   Lemma wp_add_sub_lt_success_dst_dst E dst pc_p pc_b pc_e pc_a w ins n pc_a' :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inr dst) (inr dst) →
-    (pc_a + 1)%a = Some pc_a' →
+    (pc_a + 1)%va = Some pc_a' →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) ->
 
     {{{ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a

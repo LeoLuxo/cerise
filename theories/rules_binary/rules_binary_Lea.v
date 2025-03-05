@@ -23,8 +23,8 @@ Section cap_lang_spec_rules.
 
      nclose specN ⊆ Ep →
 
-     spec_ctx ∗ ⤇ fill K (Instr Executable) ∗ ▷ pc_a ↣ₐ w ∗ ▷ ([∗ map] k↦y ∈ regs, k ↣ᵣ y)
-     ={Ep}=∗ ∃ retv regs', ⤇ fill K (of_val retv) ∗ ⌜ Lea_spec regs r1 arg regs' retv ⌝ ∗ pc_a ↣ₐ w
+     spec_ctx ∗ ⤇ fill K (Instr Executable) ∗ ▷ (TEMP_virt_to_phys pc_a) ↣ₐ w ∗ ▷ ([∗ map] k↦y ∈ regs, k ↣ᵣ y)
+     ={Ep}=∗ ∃ retv regs', ⤇ fill K (of_val retv) ∗ ⌜ Lea_spec regs r1 arg regs' retv ⌝ ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
                              ∗ [∗ map] k↦y ∈ regs', k ↣ᵣ y.
    Proof.
      iIntros (Hinstr Hvpc HPC Dregs Hnclose) "(Hinv & Hj & >Hpc_a & >Hmap)".
@@ -74,7 +74,7 @@ Section cap_lang_spec_rules.
      + destruct (perm_eq_dec p E); [ subst p |].
        { rewrite /is_mutable_range in Hr1v; congruence. }
 
-       destruct (a + argz)%a as [ a' |] eqn:Hoffset; cycle 1.
+       destruct (a + argz)%va as [ a' |] eqn:Hoffset; cycle 1.
        { (* Failure: offset is too large *)
          assert (c = Failed ∧ σ2 = (σr, σm)) as (-> & ->)
              by (destruct p; inversion Hstep; auto).
@@ -155,19 +155,19 @@ Section cap_lang_spec_rules.
    Lemma step_lea_success_z Ep K pc_p pc_b pc_e pc_a pc_a' w r1 p b e a z a' :
      decodeInstrW w = Lea r1 (inl z) →
      isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-     (pc_a + 1)%a = Some pc_a' →
-     (a + z)%a = Some a' →
+     (pc_a + 1)%va = Some pc_a' →
+     (a + z)%va = Some a' →
      p ≠ E →
 
      nclose specN ⊆ Ep →
 
      spec_ctx ∗ ⤇ fill K (Instr Executable)
               ∗ ▷ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
-              ∗ ▷ pc_a ↣ₐ w
+              ∗ ▷ (TEMP_virt_to_phys pc_a) ↣ₐ w
               ∗ ▷ r1 ↣ᵣ WCap p b e a
      ={Ep}=∗ ⤇ fill K (of_val NextIV)
           ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a'
-          ∗ pc_a ↣ₐ w
+          ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
           ∗ r1 ↣ᵣ WCap p b e a'.
    Proof.
      iIntros (Hinstr Hvpc Hpca' Ha' Hnep Hnclose) "(Hown & Hj & >HPC & >Hpc_a & >Hr1)".
@@ -195,19 +195,19 @@ Section cap_lang_spec_rules.
    Lemma step_lea_success_reg Ep K pc_p pc_b pc_e pc_a pc_a' w r1 rv p b e a z a' :
      decodeInstrW w = Lea r1 (inr rv) →
      isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-     (pc_a + 1)%a = Some pc_a' →
-     (a + z)%a = Some a' →
+     (pc_a + 1)%va = Some pc_a' →
+     (a + z)%va = Some a' →
      p ≠ E →
      nclose specN ⊆ Ep →
 
      spec_ctx ∗ ⤇ fill K (Instr Executable)
               ∗ ▷ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
-              ∗ ▷ pc_a ↣ₐ w
+              ∗ ▷ (TEMP_virt_to_phys pc_a) ↣ₐ w
               ∗ ▷ r1 ↣ᵣ WCap p b e a
               ∗ ▷ rv ↣ᵣ WInt z
      ={Ep}=∗ ⤇ fill K (Instr NextI)
           ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a'
-          ∗ pc_a ↣ₐ w
+          ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
           ∗ rv ↣ᵣ WInt z
           ∗ r1 ↣ᵣ WCap p b e a'.
    Proof.

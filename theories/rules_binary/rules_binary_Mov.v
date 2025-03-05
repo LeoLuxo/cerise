@@ -24,8 +24,8 @@ Section cap_lang_spec_rules.
 
     nclose specN ⊆ Ep →
 
-    spec_ctx ∗ ⤇ fill K (Instr Executable) ∗ pc_a ↣ₐ w ∗ ([∗ map] k↦y ∈ regs, k ↣ᵣ y)
-    ={Ep}=∗ ∃ retv regs', ⤇ fill K (of_val retv) ∗ ⌜ Mov_spec regs dst src regs' retv ⌝ ∗ pc_a ↣ₐ w ∗ ([∗ map] k↦y ∈ regs', k ↣ᵣ y).
+    spec_ctx ∗ ⤇ fill K (Instr Executable) ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w ∗ ([∗ map] k↦y ∈ regs, k ↣ᵣ y)
+    ={Ep}=∗ ∃ retv regs', ⤇ fill K (of_val retv) ∗ ⌜ Mov_spec regs dst src regs' retv ⌝ ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w ∗ ([∗ map] k↦y ∈ regs', k ↣ᵣ y).
   Proof.
     iIntros (Hinstr Hvpc HPC Dregs Hcls) "(#Hinv & Hj & Hpc_a & Hmap)".
     iDestruct "Hinv" as (ρ) "Hinv". rewrite /spec_inv.
@@ -88,17 +88,17 @@ Section cap_lang_spec_rules.
   Lemma step_move_success_reg_fromPC E K pc_p pc_b pc_e pc_a pc_a' w r1 wr1 :
     decodeInstrW w = Mov r1 (inr PC) →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-    (pc_a + 1)%a = Some pc_a' →
+    (pc_a + 1)%va = Some pc_a' →
     nclose specN ⊆ E →
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
              ∗ ▷ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
-             ∗ ▷ pc_a ↣ₐ w
+             ∗ ▷ (TEMP_virt_to_phys pc_a) ↣ₐ w
              ∗ ▷ r1 ↣ᵣ wr1
     ={E}=∗
          ⤇ fill K (of_val NextIV)
          ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a'
-         ∗ pc_a ↣ₐ w
+         ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
          ∗ r1 ↣ᵣ WCap pc_p pc_b pc_e pc_a.
   Proof.
     iIntros (Hinstr Hvpc Hpca' Hclose) "(Hown & Hj & >HPC & >Hpc_a & >Hr1)".
@@ -120,17 +120,17 @@ Section cap_lang_spec_rules.
   Lemma step_move_success_reg E K pc_p pc_b pc_e pc_a pc_a' w r1 wr1 rv wrv :
     decodeInstrW w = Mov r1 (inr rv) →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-    (pc_a + 1)%a = Some pc_a' →
+    (pc_a + 1)%va = Some pc_a' →
     nclose specN ⊆ E →
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
              ∗ ▷ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
-             ∗ ▷ pc_a ↣ₐ w
+             ∗ ▷ (TEMP_virt_to_phys pc_a) ↣ₐ w
              ∗ ▷ r1 ↣ᵣ wr1
              ∗ ▷ rv ↣ᵣ wrv
     ={E}=∗ ⤇ fill K (Instr NextI)
         ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a'
-        ∗ pc_a ↣ₐ w
+        ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
         ∗ r1 ↣ᵣ wrv
         ∗ rv ↣ᵣ wrv.
   Proof.
@@ -153,16 +153,16 @@ Section cap_lang_spec_rules.
    Lemma step_move_success_z E K pc_p pc_b pc_e pc_a pc_a' w r1 wr1 z :
     decodeInstrW w = Mov r1 (inl z) →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-    (pc_a + 1)%a = Some pc_a' →
+    (pc_a + 1)%va = Some pc_a' →
     nclose specN ⊆ E →
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
              ∗ ▷ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
-             ∗ ▷ pc_a ↣ₐ w
+             ∗ ▷ (TEMP_virt_to_phys pc_a) ↣ₐ w
              ∗ ▷ r1 ↣ᵣ wr1
     ={E}=∗ ⤇ fill K (Instr NextI)
         ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a'
-        ∗ pc_a ↣ₐ w
+        ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
         ∗ r1 ↣ᵣ WInt z.
   Proof.
     iIntros (Hinstr Hvpc Hpca' Hnclose) "(Hown & Hj & >HPC & >Hpc_a & >Hr1)".
