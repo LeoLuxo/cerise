@@ -22,7 +22,7 @@ Fixpoint machine_run `{MachineParameters} (fuel: nat) (c: Conf): option ConfFlag
                   | WCap _ _ _ a => a
                   | _ => top_virt (* dummy *)
                   end in
-          match m !! a with
+          match m !! (TEMP_virt_to_phys a) with
           | None => Some Failed
           | Some wa =>
               let i := decodeInstrW wa in
@@ -59,7 +59,7 @@ Proof.
     destruct (isCorrectPCb wpc) eqn:HPC.
     { apply isCorrectPCb_isCorrectPC in HPC.
       destruct wpc eqn:Hr; [by inversion HPC| | by inversion HPC]. destruct sb as [p b e a | ]; last by inversion HPC.
-      destruct (m !! a) as [wa | ] eqn:HeMem.
+      destruct (m !! (TEMP_virt_to_phys a)) as [wa | ] eqn:HeMem.
       2: {
         eexists. eapply rtc_l. unfold erased_step. exists [].
         eapply step_atomic with (t1:=[]). 1,2: reflexivity. cbn.
