@@ -94,7 +94,7 @@ Section cap_lang_rules.
   Qed.
 
   Lemma mem_neq_implies_allow_store_map:
-    ∀ (regs : Reg)(mem : gmap PhysAddr Word)(r1 : RegName)(pc_a : Addr)
+    ∀ (regs : Reg)(mem : gmap PhysAddr Word)(r1 : RegName)(pc_a : VirtAddr)
       (w w' : Word) p b e a,
       a ≠ pc_a
       → mem = <[pc_a:=w]> (<[a:=w']> ∅)
@@ -109,7 +109,7 @@ Section cap_lang_rules.
   Qed.
 
   Lemma mem_implies_allow_store_map:
-    ∀ (regs : Reg)(mem : gmap PhysAddr Word)(r1 : RegName)(pc_a : Addr)
+    ∀ (regs : Reg)(mem : gmap PhysAddr Word)(r1 : RegName)(pc_a : VirtAddr)
       (w w' : Word) p b e a,
       (if (a =? pc_a)%a
        then mem = <[pc_a:=w]> ∅

@@ -373,10 +373,25 @@ Proof.
 Qed.
 
 (* TEMPORARILY: virtual and physical addresses are a 1-to-1 mapping *)
+Program Definition TEMP_virt_to_phys (v: VirtAddr) : PhysAddr :=
+  match finz.of_z (finz.to_z (finz_of_virt_addr v)) with
+  | Some p => finz_to_phys_addr p
+  | None => _
+  end.
+Next Obligation. 
+  intros.
+  unfold finz_of_virt_addr, finz.of_z in *.
+  destruct v as [f], f.
+  simpl in *.
+  rewrite -> Z.ltb_lt in finz_lt.
+  rewrite -> Z.leb_le in finz_nonneg.
+  apply Z.lt_le_trans with _ _ MemNumPhys in finz_lt; last exact phys_fits_in_virt.
+  destruct (Z.lt_dec z MemNumPhys); last contradiction.
+  destruct (Z.le_dec 0%Z z); last contradiction.
+  discriminate.
+Defined.
 
-
-Definition TEMP_virt_to_phys (v: VirtAddr) : PhysAddr.
-Proof.
+(* Proof.
   apply finz_to_phys_addr.
   apply finz_of_virt_addr in v.
   destruct v.
@@ -385,7 +400,22 @@ Proof.
   - rewrite <- Z.ltb_lt in finz_lt.
     exact (finz.FinZ z finz_lt finz_nonneg).
   - exact phys_fits_in_virt.
+Qed. *)
+
+Lemma TEMP_virt_to_phys_eq (a b : VirtAddr) :
+  a = b ->
+  TEMP_virt_to_phys a = TEMP_virt_to_phys b.
+Proof.
+  intros. unfold TEMP_virt_to_phys in *. destruct a,b. rewrite H. auto.
 Qed.
+
+Lemma TEMP_virt_to_phys_neq (a b : VirtAddr) :
+  TEMP_virt_to_phys a ≠ TEMP_virt_to_phys b ->
+  a ≠ b.
+Proof.
+  intros. intro. apply TEMP_virt_to_phys_eq in H0. contradiction.
+Qed.
+  
 
 Global Opaque MemNumVirt.
 Global Opaque MemNumPhys.

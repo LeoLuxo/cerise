@@ -89,13 +89,11 @@ Section cap_lang_rules.
     - case_decide; last done.
       exists w. simplify_map_eq. auto.
   Qed.
-  
-  Search (insert _ _ (insert _ _ _) ).
 
   Lemma mem_neq_implies_allow_load_map:
     ∀ (regs : Reg)(mem : gmap PhysAddr Word)(r2 : RegName) (pc_a : VirtAddr)
       (w w' : Word) p b e a,
-      a ≠ pc_a
+      (TEMP_virt_to_phys a) ≠ (TEMP_virt_to_phys pc_a)
       → mem = <[(TEMP_virt_to_phys pc_a):=w]> (<[(TEMP_virt_to_phys a):=w']> ∅)
       → regs !! r2 = Some (WCap p b e a)
       → allow_load_map_or_true r2 regs mem.
@@ -104,30 +102,26 @@ Section cap_lang_rules.
     exists p,b,e,a; split.
     - unfold read_reg_inr. by rewrite Hreg2.
     - case_decide; last done.
-      exists w'.
-      subst.
-      rewrite insert_commute.
-      + simplify_map_eq. auto.
-      + intro. unfold not in H4. destruct H4. injection H3.  
+      exists w'. simplify_map_eq. auto. 
   Qed.
 
   Lemma mem_implies_allow_load_map:
-    ∀ (regs : Reg)(mem : gmap PhysAddr Word)(r2 : RegName) (pc_a : Addr)
+    ∀ (regs : Reg)(mem : gmap PhysAddr Word)(r2 : RegName) (pc_a : VirtAddr)
       (w w' : Word) p b e a,
-      (if (a =? pc_a)%a
-       then mem = <[pc_a:=w]> ∅
-       else mem = <[pc_a:=w]> (<[a:=w']> ∅))
+      (if (a =? pc_a)%va
+       then mem = <[(TEMP_virt_to_phys pc_a):=w]> ∅
+       else mem = <[(TEMP_virt_to_phys pc_a):=w]> (<[(TEMP_virt_to_phys a):=w']> ∅))
       → regs !! r2 = Some (WCap p b e a)
       → allow_load_map_or_true r2 regs mem.
   Proof.
     intros regs mem r2 pc_a w w' p b e a H4 Hrr2.
-    destruct (a =? pc_a)%a eqn:Heq.
-      + apply Z.eqb_eq, finz_to_z_eq in Heq. subst a. eapply mem_eq_implies_allow_load_map; eauto.
-      + apply Z.eqb_neq in Heq. eapply mem_neq_implies_allow_load_map; eauto. congruence.
+    destruct (a =? pc_a)%va eqn:Heq.
+      + apply Z.eqb_eq, finz_to_z_eq in Heq. unfold_addr. subst. eapply mem_eq_implies_allow_load_map; eauto.
+      + apply Z.eqb_neq in Heq. unfold_addr. subst. eapply mem_neq_implies_allow_load_map; eauto.  congruence.
   Qed.
 
   Lemma mem_implies_loadv:
-    ∀ (pc_a : Addr) (w w' : Word) (a0 : Addr)
+    ∀ (pc_a : VirtAddr) (w w' : Word) (a0 : Addr)
       (mem0 : gmap Addr Word) (loadv : Word),
       (if (a0 =? pc_a)%a
        then mem0 = <[pc_a:=w]> ∅
