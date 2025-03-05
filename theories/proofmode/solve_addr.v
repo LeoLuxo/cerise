@@ -5,6 +5,10 @@ From machine_utils Require Import solve_finz.
 
 Ltac zify_addr := zify_finz.
 
+(* Hook for extending the tactic *)
+Ltac unfold_extras_hook :=
+  fail.
+
 Ltac unfold_phys_addr := 
   unfold z_of_phys_addr in *;
   unfold z_to_phys_addr in *;
@@ -58,6 +62,7 @@ Ltac unfold_virt_addr :=
   
   
 Ltac unfold_addr := 
+  try unfold_extras_hook;
   unfold_phys_addr;
   unfold_virt_addr;
   simpl in *.

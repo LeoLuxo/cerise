@@ -26,6 +26,10 @@ Global Ltac zify_finz_op_nonbranching_step_hook ::=
     apply isWithin_of_le
   end.
 
+Global Ltac unfold_extras_hook ::= 
+  unfold withinBoundsVirt in *;
+  unfold withinBoundsPhys in *.
+
 
 (* tests *)
 From Coq Require Import ZArith.
@@ -33,12 +37,12 @@ From Coq Require Import ZArith.
 Goal forall d d' d'',
   (d + 1)%pa = Some d'' ->
   (d + 2)%pa = Some d' ->
-  withinBounds d d' d'' = true.
+  withinBoundsPhys d d' d'' = true.
 Proof. intros. solve_addr. Qed.
 
 
 Goal forall d d' d'',
   (d + 1)%va = Some d'' ->
   (d + 2)%va = Some d' ->
-  withinBounds d d' d'' = true.
+  withinBoundsVirt d d' d'' = true.
 Proof. intros. solve_addr. Qed.
