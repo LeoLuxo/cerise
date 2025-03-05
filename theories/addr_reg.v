@@ -364,16 +364,13 @@ Definition InBoundsVirt (b e f : VirtAddr):=
 
 (* -------------------------------- Address convertion -----------------------------------*)
 
-Local Lemma phys_fits_in_virt :
+Lemma phys_fits_in_virt :
   (MemNumPhys <= MemNumVirt)%Z.
 Proof.
   unfold MemNumVirt.
   unfold MemNumPhys.
   lia.
 Qed.
-
-Global Opaque MemNumVirt.
-Global Opaque MemNumPhys.
 
 (* TEMPORARILY: virtual and physical addresses are a 1-to-1 mapping *)
 Definition TEMP_virt_to_phys (v: VirtAddr) : PhysAddr.
@@ -387,6 +384,9 @@ Proof.
     exact (finz.FinZ z finz_lt finz_nonneg).
   - exact phys_fits_in_virt.
 Qed.
+
+Global Opaque MemNumVirt.
+Global Opaque MemNumPhys.
 
 
 
