@@ -112,7 +112,7 @@ Section cap_lang_spec_rules.
     apply (addr_of_arg_mono _ σr) in Ha2; auto. rewrite Ha2 /= in Hstep.
       rewrite /update_reg /= in Hstep.
 
-      destruct (isWithin a1 a2 b e) eqn:Hiw; cycle 1.
+      destruct (isWithinVirt a1 a2 b e) eqn:Hiw; cycle 1.
       { destruct p; try congruence; inv Hstep ; iFailStep Subseg_fail_not_iswithin_cap. }
 
       destruct (incrementPC (<[ dst := (WCap p a1 a2 a) ]> regs)) eqn:Hregs';
@@ -218,9 +218,9 @@ Section cap_lang_spec_rules.
   Lemma step_subseg_success E K pc_p pc_b pc_e pc_a w dst r1 r2 p b e a n1 n2 a1 a2 pc_a' :
     decodeInstrW w = Subseg dst (inr r1) (inr r2) →
     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-    z_to_addr n1 = Some a1 ∧ z_to_addr n2 = Some a2 →
+    z_to_virt_addr n1 = Some a1 ∧ z_to_virt_addr n2 = Some a2 →
     p ≠ machine_base.E →
-    isWithin a1 a2 b e = true →
+    isWithinVirt a1 a2 b e = true →
     (pc_a + 1)%va = Some pc_a' →
     nclose specN ⊆ E →
 

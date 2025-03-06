@@ -82,7 +82,7 @@ Section logrel.
   Proof. solve_proper. Qed.
 
   (* interp definitions *)
-  Program Definition interp_ref_inv (a : Addr) : D -n> iPropO Σ := λne P, (∃ w, a ↦ₐ w ∗ P w)%I.
+  Program Definition interp_ref_inv (a : VirtAddr) : D -n> iPropO Σ := λne P, (∃ w, a ↦ₐ w ∗ P w)%I.
   Solve Obligations with solve_proper.
 
   Definition logN : namespace := nroot .@ "logN".

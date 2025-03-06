@@ -42,7 +42,7 @@
         extraQuery = {
           ocaml-base-compiler = "4.14.1"; # Required for version 8.18 of coq
           coq-lsp = "*";
-          vscoq-language-server = "*";
+          vscoq-language-server = "2.2.5";
         };
 
         # Build the opam project

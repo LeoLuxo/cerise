@@ -20,7 +20,7 @@ Section codefrag.
   Lemma codefrag_lookup_acc a0 (cs: list Word) (i: nat) w:
     SimplTC (cs !! i) (Some w) →
     codefrag a0 cs -∗
-      (a0 ^+ i)%a ↦ₐ w ∗ ((a0 ^+ i)%a ↦ₐ w -∗ codefrag a0 cs).
+      (a0 ^+ i)%va ↦ₐ w ∗ ((a0 ^+ i)%va ↦ₐ w -∗ codefrag a0 cs).
   Proof.
     iIntros (Hi) "Hcs".
     iDestruct (codefrag_contiguous_region with "Hcs") as %Hub.

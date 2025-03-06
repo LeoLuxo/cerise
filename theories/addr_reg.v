@@ -298,6 +298,12 @@ Fixpoint seq_phys (b : PhysAddr) (n : nat) : list (PhysAddr) :=
 Definition seq_between_phys (b e : PhysAddr) : list (PhysAddr) :=
   seq_phys b (dist_phys b e).
 
+Definition max_phys (a b : PhysAddr) : PhysAddr :=
+  if (a <=? b)%pa then b else a.
+
+Definition min_phys (a b : PhysAddr) : PhysAddr :=
+  if (a <=? b)%pa then a else b.
+
 
 (* -------------------------------- Virtual Memory addresses -----------------------------------*)
 
@@ -385,6 +391,12 @@ Fixpoint seq_virt (b : VirtAddr) (n : nat) : list (VirtAddr) :=
 
 Definition seq_between_virt (b e : VirtAddr) : list (VirtAddr) :=
   seq_virt b (dist_virt b e).
+
+Definition max_virt (a b : VirtAddr) : VirtAddr :=
+  if (a <=? b)%va then b else a.
+
+Definition min_virt (a b : VirtAddr) : VirtAddr :=
+  if (a <=? b)%va then a else b.
 
 (* -------------------------------- Address convertion -----------------------------------*)
 

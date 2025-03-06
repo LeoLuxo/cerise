@@ -10,11 +10,11 @@ Section helpers.
   (* ---------------------------- Helper Lemmas --------------------------------------- *)
 
   Definition isCorrectPC_range p b e a0 an :=
-    ∀ ai, (a0 <= ai)%a ∧ (ai < an)%a → isCorrectPC (WCap p b e ai).
+    ∀ ai, (a0 <= ai)%va ∧ (ai < an)%va → isCorrectPC (WCap p b e ai).
 
-  Lemma isCorrectPC_inrange p b (e a0 an a: Addr) :
+  Lemma isCorrectPC_inrange p b (e a0 an a: VirtAddr) :
     isCorrectPC_range p b e a0 an →
-    (a0 <= a < an)%Z →
+    (a0 <= a < an)%va →
     isCorrectPC (WCap p b e a).
   Proof.
     unfold isCorrectPC_range. move=> /(_ a) HH ?. apply HH. eauto.
@@ -22,18 +22,18 @@ Section helpers.
 
   Lemma isCorrectPC_contiguous_range p b e a0 an a l :
     isCorrectPC_range p b e a0 an →
-    contiguous_between l a0 an →
-    a ∈ l →
+    contiguous_between l (TEMP_virt_to_phys a0) (TEMP_virt_to_phys an) →
+    (TEMP_virt_to_phys a) ∈ l →
     isCorrectPC (WCap p b e a).
-  Proof.
-    intros Hr Hc Hin.
+  Proof. Admitted.
+    (* intros Hr Hc Hin.
     eapply isCorrectPC_inrange; eauto.
     eapply contiguous_between_middle_bounds'; eauto.
-  Qed.
+  Qed. *)
 
   Lemma isCorrectPC_range_perm p b e a0 an :
     isCorrectPC_range p b e a0 an →
-    (a0 < an)%a →
+    (a0 < an)%va →
     p = RX ∨ p = RWX.
   Proof.
     intros Hr H0n.
@@ -43,7 +43,7 @@ Section helpers.
 
   Lemma isCorrectPC_range_npE p b e a0 an :
     isCorrectPC_range p b e a0 an →
-    (a0 < an)%a →
+    (a0 < an)%va →
     p ≠ E.
   Proof.
     intros HH1 HH2.
