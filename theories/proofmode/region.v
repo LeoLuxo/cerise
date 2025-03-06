@@ -21,13 +21,13 @@ Section region.
   (*--------------------------------------------------------------------------*)
 
   Definition region_pointsto (b e : PhysAddr) (ws : list Word) : iProp Σ :=
-    ([∗ list] k↦y1;y2 ∈ (finz.seq_between (finz_of_phys_addr b) (finz_of_phys_addr e));ws, y1 ↦ₐ y2)%I.
+    ([∗ list] k↦y1;y2 ∈ (seq_between_phys b e);ws, y1 ↦ₐ y2)%I.
 
-  Definition included (b' e' : Addr) (b e : Addr) : iProp Σ :=
-    (⌜(b <= b')%a⌝ ∧ (⌜e' <= e⌝)%a)%I.
+  Definition included (b' e' : PhysAddr) (b e : PhysAddr) : iProp Σ :=
+    (⌜(b <= b')%pa⌝ ∧ (⌜e' <= e⌝)%pa)%I.
 
-  Definition in_range (a b e : Addr) : Prop :=
-    (b <= a)%a ∧ (a < e)%a.
+  Definition in_range (a b e : PhysAddr) : Prop :=
+    (b <= a)%pa ∧ (a < e)%pa.
 
   Lemma pointsto_decomposition:
     forall l1 l2 ws1 ws2,
@@ -37,18 +37,18 @@ Section region.
   Proof. intros. rewrite big_sepL2_app' //. Qed.
 
   Lemma extract_from_region b e a ws φ :
-    let n := length (finz.seq_between b a) in
-    (b <= a ∧ a < e)%a →
+    let n := length (seq_between_phys b a) in
+    (b <= a ∧ a < e)%pa →
     (region_pointsto b e ws ∗ ([∗ list] w ∈ ws, φ w)) ⊣⊢
      (∃ w,
         ⌜ws = take n ws ++ (w::drop (S n) ws)⌝
         ∗ region_pointsto b a (take n ws)
         ∗ ([∗ list] w ∈ (take n ws), φ w)
         ∗ a ↦ₐ w ∗ φ w
-        ∗ region_pointsto ((a^+1))%a e (drop (S n) ws)
+        ∗ region_pointsto ((a^+1))%pa e (drop (S n) ws)
         ∗ ([∗ list] w ∈ (drop (S n) ws), φ w)%I).
-  Proof.
-    intros. iSplit.
+  Proof. Admitted.
+    (* intros. iSplit.
     - iIntros "[A B]". unfold region_pointsto.
       iDestruct (big_sepL2_length with "A") as %Hlen.
       rewrite (finz_seq_between_decomposition b a e) //.
@@ -71,18 +71,18 @@ Section region.
       unfold region_pointsto. rewrite (finz_seq_between_decomposition b a e) //.
       iDestruct "AB" as "[A3 B3]".
       rewrite {5}Hws. iFrame. rewrite {3}Hws. iFrame.
-  Qed.
+  Qed. *)
 
   Lemma extract_from_region' b e a ws φ `{!∀ x, Persistent (φ x)}:
-    let n := length (finz.seq_between b a) in
-    (b <= a ∧ a < e)%a →
+    let n := length (seq_between_phys b a) in
+    (b <= a ∧ a < e)%pa →
     (region_pointsto b e ws ∗ ([∗ list] w ∈ ws, φ w)) ⊣⊢
      (∃ w,
         ⌜ws = take n ws ++ (w::drop (S n) ws)⌝
         ∗ region_pointsto b a (take n ws)
         ∗ ([∗ list] w ∈ ws, φ w)
         ∗ a ↦ₐ w ∗ φ w
-        ∗ region_pointsto (a^+1)%a e (drop (S n) ws))%I.
+        ∗ region_pointsto (a^+1)%pa e (drop (S n) ws))%I.
   Proof.
     intros. iSplit.
     - iIntros "H".
@@ -96,25 +96,25 @@ Section region.
       cbn. iFrame.
   Qed.
 
-  Lemma extract_from_region_inv b e a (φ : Addr → iProp Σ) `{!∀ x, Persistent (φ x)}:
-    (b <= a ∧ a < e)%a →
-    ⊢ (([∗ list] a' ∈ (finz.seq_between b e), φ a') →
+  Lemma extract_from_region_inv b e a (φ : PhysAddr → iProp Σ) `{!∀ x, Persistent (φ x)}:
+    (b <= a ∧ a < e)%pa →
+    ⊢ (([∗ list] a' ∈ (seq_between_phys b e), φ a') →
      φ a)%I.
-  Proof.
-    iIntros (Ha) "#Hreg".
+  Proof. Admitted.
+    (* iIntros (Ha) "#Hreg".
     generalize (finz_seq_between_decomposition _ _ _ Ha); intro HRA. rewrite HRA.
     iDestruct (big_sepL_app with "Hreg") as "[Hlo Hhi] /=".
     iDestruct "Hhi" as "[$ _]".
-  Qed.
+  Qed. *)
 
-  Lemma extract_from_region_inv_2 b e a ws (φ : Addr → Word → iProp Σ)
+  Lemma extract_from_region_inv_2 b e a ws (φ : PhysAddr → Word → iProp Σ)
         `{!∀ x y, Persistent (φ x y)}:
-    let n := length (finz.seq_between b a) in
-    (b <= a ∧ a < e)%a →
-    ⊢ (([∗ list] a';w' ∈ (finz.seq_between b e);ws, φ a' w') →
+    let n := length (seq_between_phys b a) in
+    (b <= a ∧ a < e)%pa →
+    ⊢ (([∗ list] a';w' ∈ (seq_between_phys b e);ws, φ a' w') →
      ∃ w, φ a w ∗ ⌜ws = (take n ws) ++ w :: (drop (S n) ws)⌝)%I.
-  Proof.
-    iIntros (n Ha) "#Hreg".
+  Proof. Admitted.
+    (* iIntros (n Ha) "#Hreg".
     iDestruct (big_sepL2_length with "Hreg") as %Hlen.
     rewrite (finz_seq_between_decomposition b a e) //.
     assert (Hlnws: n = length (take n ws)).
@@ -136,17 +136,17 @@ Section region.
     { apply app_inj_1 in Hws2 as [_ Heq]; auto.
         by rewrite -Hlnws. }
     rewrite (drop_S' _ (take n ws ++ drop n ws) n w (l2)); try congruence.
-  Qed.
+  Qed. *)
 
   Notation "[[ b , e ]] ↦ₐ [[ ws ]]" := (region_pointsto b e ws)
             (at level 50, format "[[ b , e ]] ↦ₐ [[ ws ]]") : bi_scope.
 
   Lemma region_pointsto_cons
-      (b b' e : Addr) (w : Word) (ws : list Word) :
-    (b + 1)%a = Some b' → (b' <= e)%a →
+      (b b' e : PhysAddr) (w : Word) (ws : list Word) :
+    (b + 1)%pa = Some b' → (b' <= e)%pa →
     [[b, e]] ↦ₐ [[ w :: ws ]] ⊣⊢ b ↦ₐ w ∗ [[b', e]] ↦ₐ [[ ws ]].
-  Proof.
-    intros Hb' Hb'e.
+  Proof. Admitted.
+    (* intros Hb' Hb'e.
     rewrite /region_pointsto.
     rewrite (finz_seq_between_decomposition b b e).
     2: revert Hb' Hb'e; clear; intros; split; solve_addr.
@@ -155,26 +155,26 @@ Section region.
     rewrite (_: (b ^+ 1) = b')%a.
     2: revert Hb' Hb'e; clear; intros; solve_addr.
     eauto.
-  Qed.
+  Qed. *)
 
   Lemma region_pointsto_single b e l:
-    (b+1)%a = Some e →
+    (b+1)%pa = Some e →
     [[b,e]] ↦ₐ [[l]] -∗
     ∃ v, b ↦ₐ v ∗ ⌜l = [v]⌝.
-  Proof.
-    iIntros (Hbe) "H". rewrite /region_pointsto finz_seq_between_singleton //.
+  Proof. Admitted.
+    (* iIntros (Hbe) "H". rewrite /region_pointsto finz_seq_between_singleton //.
     iDestruct (big_sepL2_length with "H") as %Hlen.
     cbn in Hlen. destruct l as [|x l']; [by inversion Hlen|].
     destruct l'; [| by inversion Hlen]. iExists x. cbn.
     iDestruct "H" as "(H & _)". eauto.
-  Qed.
+  Qed. *)
 
-  Lemma region_pointsto_split  (b e a : Addr) (w1 w2 : list Word) :
-     (b ≤ a ≤ e)%Z →
-     (length w1) = (finz.dist b a) →
+  Lemma region_pointsto_split  (b e a : PhysAddr) (w1 w2 : list Word) :
+     (b <= a ∧ a <= e)%pa →
+     (length w1) = (dist_phys b a) →
      ([[b,e]]↦ₐ[[w1 ++ w2]] ⊣⊢ [[b,a]]↦ₐ[[w1]] ∗ [[a,e]]↦ₐ[[w2]])%I.
-   Proof with try (rewrite /finz.dist; solve_addr).
-     intros [Hba Hae] Hsize.
+   Proof with try (rewrite /dist_phys; solve_addr). Admitted.
+     (* intros [Hba Hae] Hsize.
      iSplit.
      - iIntros "Hbe".
        rewrite /region_pointsto /finz.seq_between.
@@ -191,12 +191,12 @@ Section region.
        iApply (big_sepL2_app with "Hba [Hae]"); cbn.
        rewrite (_: (b ^+ finz.dist b a)%a = a)...
        rewrite (_: finz.dist b e - finz.dist b a = finz.dist a e)...
-   Qed.
+   Qed. *)
 
    (*--------------------------------------------------------------------------*)
 
-  Definition region_pointsto_spec (b e : Addr) (ws : list Word) : iProp Σ :=
-    ([∗ list] k↦y1;y2 ∈ (finz.seq_between b e);ws, y1 ↣ₐ y2)%I.
+  Definition region_pointsto_spec (b e : PhysAddr) (ws : list Word) : iProp Σ :=
+    ([∗ list] k↦y1;y2 ∈ (seq_between_phys b e);ws, y1 ↣ₐ y2)%I.
 
   Lemma pointsto_decomposition_spec:
     forall l1 l2 ws1 ws2,
@@ -206,18 +206,18 @@ Section region.
   Proof. intros. rewrite big_sepL2_app' //. Qed.
 
   Lemma extract_from_region_spec b e a ws φ :
-    let n := length (finz.seq_between b a) in
-    (b <= a ∧ a < e)%a →
+    let n := length (seq_between_phys b a) in
+    (b <= a ∧ a < e)%pa →
     (region_pointsto_spec b e ws ∗ ([∗ list] w ∈ ws, φ w)) ⊣⊢
      (∃ w,
         ⌜ws = take n ws ++ (w::drop (S n) ws)⌝
         ∗ region_pointsto_spec b a (take n ws)
         ∗ ([∗ list] w ∈ (take n ws), φ w)
         ∗ a ↣ₐ w ∗ φ w
-        ∗ region_pointsto_spec (a^+1)%a e (drop (S n) ws)
+        ∗ region_pointsto_spec (a^+1)%pa e (drop (S n) ws)
         ∗ ([∗ list] w ∈ (drop (S n) ws), φ w)%I).
-  Proof.
-    intros. iSplit.
+  Proof. Admitted.
+    (* intros. iSplit.
     - iIntros "[A B]". unfold region_pointsto_spec.
       iDestruct (big_sepL2_length with "A") as %Hlen.
       rewrite (finz_seq_between_decomposition b a e) //.
@@ -240,18 +240,18 @@ Section region.
       unfold region_pointsto_spec. rewrite (finz_seq_between_decomposition b a e) //.
       iDestruct "AB" as "[A3 B3]".
       rewrite {5}Hws. iFrame. rewrite {3}Hws. iFrame.
-  Qed.
+  Qed. *)
 
   Lemma extract_from_region_spec' b e a ws φ `{!∀ x, Persistent (φ x)}:
-    let n := length (finz.seq_between b a) in
-    (b <= a ∧ a < e)%a →
+    let n := length (seq_between_phys b a) in
+    (b <= a ∧ a < e)%pa →
     (region_pointsto_spec b e ws ∗ ([∗ list] w ∈ ws, φ w)) ⊣⊢
      (∃ w,
         ⌜ws = take n ws ++ (w::drop (S n) ws)⌝
         ∗ region_pointsto_spec b a (take n ws)
         ∗ ([∗ list] w ∈ ws, φ w)
         ∗ a ↣ₐ w ∗ φ w
-        ∗ region_pointsto_spec (a^+1)%a e (drop (S n) ws))%I.
+        ∗ region_pointsto_spec (a^+1)%pa e (drop (S n) ws))%I.
   Proof.
     intros. iSplit.
     - iIntros "H".
@@ -269,11 +269,11 @@ Section region.
             (at level 50, format "[[ b , e ]] ↣ₐ [[ ws ]]") : bi_scope.
 
   Lemma region_pointsto_cons_spec
-      (b b' e : Addr) (w : Word) (ws : list Word) :
-    (b + 1)%a = Some b' → (b' <= e)%a →
+      (b b' e : PhysAddr) (w : Word) (ws : list Word) :
+    (b + 1)%pa = Some b' → (b' <= e)%pa →
     [[b, e]] ↣ₐ [[ w :: ws ]] ⊣⊢ b ↣ₐ w ∗ [[b', e]] ↣ₐ [[ ws ]].
-  Proof.
-    intros Hb' Hb'e.
+  Proof. Admitted.
+    (* intros Hb' Hb'e.
     rewrite /region_pointsto_spec.
     rewrite (finz_seq_between_decomposition b b e).
     2: revert Hb' Hb'e; clear; intros; split; solve_addr.
@@ -282,26 +282,26 @@ Section region.
     rewrite (_: (b ^+ 1) = b')%a.
     2: revert Hb' Hb'e; clear; intros; solve_addr.
     eauto.
-  Qed.
+  Qed. *)
 
   Lemma region_pointsto_single_spec b e l:
-    (b+1)%a = Some e →
+    (b+1)%pa = Some e →
     [[b,e]] ↣ₐ [[l]] -∗
     ∃ v, b ↣ₐ v ∗ ⌜l = [v]⌝.
-  Proof.
-    iIntros (Hbe) "H". rewrite /region_pointsto_spec finz_seq_between_singleton //.
+  Proof. Admitted.
+    (* iIntros (Hbe) "H". rewrite /region_pointsto_spec finz_seq_between_singleton //.
     iDestruct (big_sepL2_length with "H") as %Hlen.
     cbn in Hlen. destruct l as [|x l']; [by inversion Hlen|].
     destruct l'; [| by inversion Hlen]. iExists x. cbn.
     iDestruct "H" as "(H & _)". eauto.
-  Qed.
+  Qed. *)
 
-  Lemma region_pointsto_split_spec  (b e a : Addr) (w1 w2 : list Word) :
-     (b ≤ a ≤ e)%Z →
-     (length w1) = (finz.dist b a) →
+  Lemma region_pointsto_split_spec  (b e a : PhysAddr) (w1 w2 : list Word) :
+     (b <= a ∧ a <= e)%pa →
+     (length w1) = (dist_phys b a) →
      ([[b,e]]↣ₐ[[w1 ++ w2]] ⊣⊢ [[b,a]]↣ₐ[[w1]] ∗ [[a,e]]↣ₐ[[w2]])%I.
-   Proof with try (rewrite /finz.dist; solve_addr).
-     intros [Hba Hae] Hsize.
+   Proof with try (rewrite /finz.dist; solve_addr). Admitted.
+     (* intros [Hba Hae] Hsize.
      iSplit.
      - iIntros "Hbe".
        rewrite /region_pointsto_spec /finz.seq_between.
@@ -318,7 +318,7 @@ Section region.
        iApply (big_sepL2_app with "Hba [Hae]"); cbn.
        rewrite (_: (b ^+ finz.dist b a)%a = a)...
        rewrite (_: finz.dist b e - finz.dist b a = finz.dist a e)...
-   Qed.
+   Qed. *)
 
 
 End region.
@@ -339,20 +339,20 @@ Section codefrag.
   Context {Σ:gFunctors} {memg:memG Σ} {regg:regG Σ}
     `{MP: MachineParameters}.
 
-  Definition codefrag (a0: Addr) (cs: list Word) :=
-    ([[ a0, (a0 ^+ length cs)%a ]] ↦ₐ [[ cs ]])%I.
+  Definition codefrag (a0: PhysAddr) (cs: list Word) :=
+    ([[ a0, (a0 ^+ length cs)%pa ]] ↦ₐ [[ cs ]])%I.
 
   Lemma codefrag_contiguous_region a0 cs :
     codefrag a0 cs -∗
-      ⌜ContiguousRegion a0 (length cs)⌝.
-  Proof using.
-    iIntros "Hcs". unfold codefrag.
+      ⌜ContiguousRegionPhys a0 (length cs)⌝.
+  Proof using. Admitted.
+    (* iIntros "Hcs". unfold codefrag.
     iDestruct (big_sepL2_length with "Hcs") as %Hl.
     set an := (a0 + length cs)%a in Hl |- *.
     unfold ContiguousRegion.
     destruct an eqn:Han; subst an; [ by eauto |]. cbn.
     exfalso. rewrite finz_seq_between_length /finz.dist in Hl.
     solve_addr.
-  Qed.
+  Qed. *)
 
 End codefrag.

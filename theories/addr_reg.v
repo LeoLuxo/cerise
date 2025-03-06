@@ -285,6 +285,18 @@ Definition SubBoundsPhys (b e : PhysAddr) (b' e' : PhysAddr) :=
 
 Definition InBoundsPhys (b e f : PhysAddr):=
   (b <= f)%pa ∧ (f < e)%pa.
+  
+Definition dist_phys (b e : PhysAddr) : nat :=
+Z.to_nat (z_of_phys_addr e - z_of_phys_addr b)%Z.
+
+Fixpoint seq_phys (b : PhysAddr) (n : nat) : list (PhysAddr) :=
+  match n with
+  | 0 => nil
+  | S n => b :: (seq_phys (b ^+ 1)%pa n)
+  end.
+
+Definition seq_between_phys (b e : PhysAddr) : list (PhysAddr) :=
+  seq_phys b (dist_phys b e).
 
 
 (* -------------------------------- Virtual Memory addresses -----------------------------------*)
@@ -361,6 +373,18 @@ Definition SubBoundsVirt (b e : VirtAddr) (b' e' : VirtAddr) :=
 
 Definition InBoundsVirt (b e f : VirtAddr):=
   (b <= f)%va ∧ (f < e)%va.
+  
+Definition dist_virt (b e : VirtAddr) : nat :=
+Z.to_nat (z_of_virt_addr e - z_of_virt_addr b)%Z.
+
+Fixpoint seq_virt (b : VirtAddr) (n : nat) : list (VirtAddr) :=
+  match n with
+  | 0 => nil
+  | S n => b :: (seq_virt (b ^+ 1)%va n)
+  end.
+
+Definition seq_between_virt (b e : VirtAddr) : list (VirtAddr) :=
+  seq_virt b (dist_virt b e).
 
 (* -------------------------------- Address convertion -----------------------------------*)
 
