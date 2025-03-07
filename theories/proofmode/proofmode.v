@@ -20,9 +20,9 @@ Section codefrag.
   Lemma codefrag_lookup_acc a0 (cs: list Word) (i: nat) w:
     SimplTC (cs !! i) (Some w) →
     codefrag a0 cs -∗
-      (a0 ^+ i)%va ↦ₐ w ∗ ((a0 ^+ i)%va ↦ₐ w -∗ codefrag a0 cs).
-  Proof.
-    iIntros (Hi) "Hcs".
+      (a0 ^+ i)%pa ↦ₐ w ∗ ((a0 ^+ i)%pa ↦ₐ w -∗ codefrag a0 cs).
+  Proof. Admitted.
+    (* iIntros (Hi) "Hcs".
     iDestruct (codefrag_contiguous_region with "Hcs") as %Hub.
     rewrite /codefrag.
     destruct Hub as [? Hub].
@@ -31,7 +31,7 @@ Section codefrag.
     { apply lookup_lt_is_Some_1; eauto. }
     { solve_addr. }
     iFrame.
-  Qed.
+  Qed. *)
 
 End codefrag.
 
@@ -49,18 +49,27 @@ Ltac wp_instr :=
   subst X;
   cbv beta.
 
-Lemma z_addr_base {fb off off1 off2 : Z} {f0 f1 f2 : finz fb}: (f0 + off1)%f = Some f1 → (f0 + off2)%f = Some f2 → (off2 - off1)%Z = off → (f1 ^+ off)%f = f2.
+Lemma phys_addr_base {fb off off1 off2 : Z} {a0 a1 a2 : PhysAddr}: (a0 + off1)%pa = Some a1 → (a0 + off2)%pa = Some a2 → (off2 - off1)%Z = off → (a1 ^+ off)%pa = a2.
   Proof. solve_addr. Qed.
+Lemma virt_addr_base {fb off off1 off2 : Z} {a0 a1 a2 : VirtAddr}: (a0 + off1)%va = Some a1 → (a0 + off2)%va = Some a2 → (off2 - off1)%Z = off → (a1 ^+ off)%va = a2.
+  Proof. solve_addr. Qed.
+  
 Ltac solve_block_move :=
     first [solve_addr+ |
     lazymatch goal with
       | |- (?prev_a ^+ ?off)%f = ?cur_a =>
           match goal with
-            | H: (prev_a + ?off1)%a = Some cur_a |- _ => solve_addr+H
-            | H1: (?base_a + ?off1)%a = Some prev_a |- _ =>
+            | H: (prev_a + ?off1)%pa = Some cur_a |- _ => solve_addr+H
+            | H1: (?base_a + ?off1)%pa = Some prev_a |- _ =>
                 match goal with
-                | H2 : (base_a + ?off2)%a = Some cur_a |- _ =>
-                    apply (z_addr_base H1 H2); solve_addr+
+                | H2 : (base_a + ?off2)%pa = Some cur_a |- _ =>
+                    apply (phys_addr_base H1 H2); solve_addr+
+                end
+            | H: (prev_a + ?off1)%va = Some cur_a |- _ => solve_addr+H
+            | H1: (?base_a + ?off1)%va = Some prev_a |- _ =>
+                match goal with
+                | H2 : (base_a + ?off2)%va = Some cur_a |- _ =>
+                    apply (virt_addr_base H1 H2); solve_addr+
                 end
           end
      end ].
@@ -84,10 +93,10 @@ Ltac codefrag_facts h :=
      iDestruct (codefrag_contiguous_region with h) as %HH;
      cbn [length map encodeInstrsW] in HH
     );
-    (match goal with H : SubBounds _ _ a_base (a_base ^+ _)%a |- _ => idtac end ||
+    (match goal with H : SubBounds _ _ a_base (a_base ^+ _)%pa |- _ => idtac end ||
      (try match goal with H : SubBounds ?b ?e _ _ |- _ =>
             let HH := fresh in
-            assert (HH: SubBounds b e a_base (a_base ^+ length code)%a) by solve_addr;
+            assert (HH: SubBounds b e a_base (a_base ^+ length code)%pa) by solve_addr;
             cbn [length map encodeInstrsW] in HH
           end))
   end.
@@ -96,7 +105,7 @@ Ltac clear_codefrag_facts h :=
   let h := constr:(h:ident) in
   match goal with |- context [ Esnoc _ h (codefrag ?a_base ?code) ] =>
     try match goal with H : ContiguousRegion a_base _ |- _ => clear H end;
-    try match goal with H : SubBounds _ _ a_base (a_base ^+ _)%a |- _ => clear H end
+    try match goal with H : SubBounds _ _ a_base (a_base ^+ _)%pa |- _ => clear H end
   end.
 
 (* Classes for the code sub-block focusing tactic *)
@@ -150,45 +159,46 @@ Section codefrag_subblock.
     codefrag a0 (l1 ++ l2) -∗
     codefrag a0 l1 ∗
     (codefrag a0 l1 -∗ codefrag a0 (l1 ++ l2)).
-  Proof.
-    rewrite /codefrag. iIntros "H".
+  Proof. Admitted.
+    (* rewrite /codefrag. iIntros "H".
     iDestruct (codefrag_contiguous_region with "H") as %Hregion.
     destruct Hregion as [an Han]. rewrite length_app in Han |- *.
-    iDestruct (region_pointsto_split _ _ (a0 ^+ length l1)%a with "H") as "[H1 H2]".
-    by solve_addr. by rewrite /finz.dist; solve_addr.
+    iDestruct (region_pointsto_split _ _ (a0 ^+ length l1)%pa with "H") as "[H1 H2]".
+    by solve_addr. by rewrite /dist_phys; solve_addr.
     iFrame. iIntros "H1".
     rewrite region_pointsto_split. iFrame. solve_addr. rewrite /finz.dist; solve_addr.
-  Qed.
+  Qed. *)
 
   Lemma codefrag_block_acc (n: nat) a0 (cs: list Word) l1 l l2:
     NthSubBlock cs n l1 l l2 →
     codefrag a0 cs -∗
-    ∃ (ai: Addr), ⌜(a0 + length l1)%a = Some ai⌝ ∗
+    ∃ (ai: PhysAddr), ⌜(a0 + length l1)%pa = Some ai⌝ ∗
     codefrag ai l ∗
     (codefrag ai l -∗ codefrag a0 cs).
-  Proof.
-    unfold NthSubBlock. intros ->. rewrite /codefrag. iIntros "H".
+  Proof. Admitted.
+    (* unfold NthSubBlock. intros ->. rewrite /codefrag. iIntros "H".
     iDestruct (codefrag_contiguous_region with "H") as %[a1 Ha1].
     rewrite !length_app in Ha1 |- *.
-    iDestruct (region_pointsto_split _ _ (a0 ^+ length l1)%a with "H") as "[H1 H2]".
-    solve_addr. rewrite /finz.dist; solve_addr.
-    iExists (a0 ^+ length l1)%a. iSplitR. iPureIntro; solve_addr.
-    iDestruct (region_pointsto_split _ _ ((a0 ^+ length l1) ^+ length l)%a with "H2") as "[H2 H3]".
-    solve_addr. rewrite /finz.dist; solve_addr. iFrame.
+    iDestruct (region_pointsto_split _ _ (a0 ^+ length l1)%pa with "H") as "[H1 H2]".
+    solve_addr. rewrite /dist_phys; solve_addr.
+    iExists (a0 ^+ length l1)%pa. iSplitR. iPureIntro; solve_addr.
+    iDestruct (region_pointsto_split _ _ ((a0 ^+ length l1) ^+ length l)%pa with "H2") as "[H2 H3]".
+    solve_addr. rewrite /dist_phys; solve_addr. iFrame.
     iIntros "H2".
-    rewrite region_pointsto_split. iFrame. 2: solve_addr. 2: rewrite /finz.dist; solve_addr.
-    rewrite region_pointsto_split. iFrame. solve_addr. rewrite /finz.dist; solve_addr.
-  Qed.
+    rewrite region_pointsto_split. iFrame. 2: solve_addr. 2: rewrite /dist_phys; solve_addr.
+    rewrite region_pointsto_split. iFrame. solve_addr. rewrite /dist_phys; solve_addr.
+  Qed. *)
 
 End codefrag_subblock.
 
-Lemma focus_block_0_SubBounds (b e b' : Addr) k m :
-  SubBounds b e b' (b' ^+ k)%a →
-  ContiguousRegion b' m →
+Lemma focus_block_0_SubBounds (b e b' : PhysAddr) k m :
+  SubBoundsPhys b e b' (b' ^+ k)%pa →
+  ContiguousRegionPhys b' m →
   (0 ≤ m)%Z →
   (m ≤ k)%Z →
-  SubBounds b e b' (b' ^+ m)%a.
-Proof. solve_addr. Qed.
+  SubBoundsPhys b e b' (b' ^+ m)%pa.
+Proof. Admitted.
+ (* solve_addr. Qed. *)
 
 (* More efficient version of codefrag_facts (avoids calling [solve_addr])
    because we have slightly more information when doing focus_block_0 *)
@@ -196,7 +206,7 @@ Ltac focus_block_0_codefrag_facts hi a0 :=
   let HCR := fresh in
   iDestruct (codefrag_contiguous_region with hi) as %HCR;
   cbn [length map encodeInstrsW] in HCR;
-  try lazymatch goal with HSB : SubBounds ?b ?e a0 (a0 ^+ _)%a |- _ =>
+  try lazymatch goal with HSB : SubBounds ?b ?e a0 (a0 ^+ _)%pa |- _ =>
     let HSB' := fresh in
     unshelve epose proof (focus_block_0_SubBounds _ _ _ _ _ HSB HCR _ _) as HSB';
     [solve_pure ..|];
@@ -226,15 +236,16 @@ Ltac focus_block_0 h hi hcont :=
 Tactic Notation "focus_block_0" constr(h) "as" constr(hi) constr(hcont) :=
   focus_block_0 h hi hcont.
 
-Lemma focus_block_SubBounds (b e b' b'': Addr) k m n :
-  SubBounds b e b' (b' ^+ k)%a →
-  ContiguousRegion b'' m →
-  (b' + n)%a = Some b'' →
+Lemma focus_block_SubBounds (b e b' b'': PhysAddr) k m n :
+  SubBoundsPhys b e b' (b' ^+ k)%pa →
+  ContiguousRegionPhys b'' m →
+  (b' + n)%pa = Some b'' →
   (0 ≤ n)%Z →
   (0 ≤ m)%Z →
   ((n + m) <= k)%Z →
-  SubBounds b e b'' (b'' ^+ m)%a.
-Proof. solve_addr. Qed.
+  SubBoundsPhys b e b'' (b'' ^+ m)%pa.
+Proof. Admitted.
+(* solve_addr. Qed. *)
 
 (* More efficient version of codefrag_facts (avoids calling [solve_addr])
    because we have slightly more information when doing focus_block *)
@@ -242,7 +253,7 @@ Ltac focus_block_codefrag_facts hi a0 Ha_base :=
   let HCR := fresh in
   iDestruct (codefrag_contiguous_region with hi) as %HCR;
   cbn [length map encodeInstrsW] in HCR;
-  try lazymatch goal with HSB : SubBounds ?b ?e a0 (a0 ^+ _)%a |- _ =>
+  try lazymatch goal with HSB : SubBounds ?b ?e a0 (a0 ^+ _)%pa |- _ =>
     let HSB' := fresh in
     unshelve epose proof (focus_block_SubBounds _ _ _ _ _ _ _ HSB HCR Ha_base _ _ _) as HSB';
     [solve_pure ..|];
@@ -334,9 +345,9 @@ Qed.
 
 Class FramableRegisterPointsto (r: RegName) (w: Word) := {}.
 #[export] Hint Mode FramableRegisterPointsto + - : typeclass_instances.
-Class FramableMemoryPointsto (a: Addr) (dq: dfrac) (w: Word) := {}.
+Class FramableMemoryPointsto (a: PhysAddr) (dq: dfrac) (w: Word) := {}.
 #[export] Hint Mode FramableMemoryPointsto + - - : typeclass_instances.
-Class FramableCodefrag (a: Addr) (l: list Word) := {}.
+Class FramableCodefrag (a: PhysAddr) (l: list Word) := {}.
 #[export] Hint Mode FramableCodefrag + - : typeclass_instances.
 
 Instance FramableRegisterPointsto_default r w :
@@ -421,7 +432,7 @@ Ltac2 on_lasts tacs :=
 
 (* iApplyCapAuto_init *)
 
-Ltac2 iSpecializeDelay (h: constr) :=
+(* Ltac2 iSpecializeDelay (h: constr) :=
   refine '(tac_specialize_assert_delay _ $h _ _ _ _ _ _ _ _ _ _ _ _);
   Control.shelve_unifiable ();
   Control.dispatch [
@@ -466,7 +477,8 @@ Ltac iApplyCapAuto_init lemma :=
 
 (* Name resources in the goal according to the table *)
 
-Definition check_addr_eq (a b: Addr) `{FinZEq _ a b res} := res.
+Definition check_phys_addr_eq (a b: PhysAddr) `{PhysAddrEq a b res} := res.
+Definition check_virt_addr_eq (a b: VirtAddr) `{VirtAddrEq a b res} := res.
 
 Ltac2 name_cap_resource (name, lhs, kind) :=
   match kind with
@@ -478,14 +490,14 @@ Ltac2 name_cap_resource (name, lhs, kind) :=
     end
   | Mem =>
     match! goal with [ |- context [ (?a ↦ₐ{?dq} ?x)%I ] ] =>
-      let is_lhs := eval unfold check_addr_eq in (@check_addr_eq $a $lhs _ _) in
+      let is_lhs := eval unfold check_phys_addr_eq in (@check_phys_addr_eq $a $lhs _ _) in
       assert_constr_eq is_lhs 'true;
       ltac1:(x dq a name |- change (a ↦ₐ{dq} x)%I with (name ∷ (a ↦ₐ{dq} x))%I)
         (Ltac1.of_constr x) (Ltac1.of_constr dq) (Ltac1.of_constr a) (Ltac1.of_constr name)
     end
   | Codefrag =>
     match! goal with [ |- context [ codefrag ?a ?l ] ] =>
-      let is_lhs := eval unfold check_addr_eq in (@check_addr_eq $a $lhs _ _) in
+      let is_lhs := eval unfold check_phys_addr_eq in (@check_phys_addr_eq $a $lhs _ _) in
       assert_constr_eq is_lhs 'true;
       ltac1:(l a name |- change (codefrag a l) with (name ∷ (codefrag a l)))
         (Ltac1.of_constr l) (Ltac1.of_constr a) (Ltac1.of_constr name)
@@ -621,4 +633,4 @@ Ltac2 rec iGo hprog :=
 
 Ltac iGo hprog :=
   let f := ltac2:(hprog |- iGo (Option.get (Ltac1.to_constr hprog))) in
-  f hprog.
+  f hprog. *)

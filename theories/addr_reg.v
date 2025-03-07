@@ -304,6 +304,10 @@ Definition max_phys (a b : PhysAddr) : PhysAddr :=
 Definition min_phys (a b : PhysAddr) : PhysAddr :=
   if (a <=? b)%pa then a else b.
 
+Class PhysAddrEq (f f' : PhysAddr) (res : bool) :=
+  MkPhysAddrEq: res = true → f = f'.
+#[global] Hint Mode PhysAddrEq + + - : typeclass_instances.
+
 
 (* -------------------------------- Virtual Memory addresses -----------------------------------*)
 
@@ -397,6 +401,10 @@ Definition max_virt (a b : VirtAddr) : VirtAddr :=
 
 Definition min_virt (a b : VirtAddr) : VirtAddr :=
   if (a <=? b)%va then a else b.
+
+Class VirtAddrEq (f f' : VirtAddr) (res : bool) :=
+  MkVirtAddrEq: res = true → f = f'.
+#[global] Hint Mode VirtAddrEq + + - : typeclass_instances.
 
 (* -------------------------------- Address convertion -----------------------------------*)
 
