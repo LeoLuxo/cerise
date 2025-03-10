@@ -572,16 +572,16 @@ Section cap_lang_spec_rules.
 
   (* ----------------------------- Fail and Halt --------------------------------- *)
 
-  Lemma step_halt E K pc_p pc_b pc_e pc_a w :
+  Lemma step_halt E K pc_asid pc_p pc_b pc_e pc_a w :
     decodeInstrW w = Halt →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
     nclose specN ⊆ E →
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
-             ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
+             ∗ PC ↣ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
              ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
     ={E}=∗ ⤇ fill K (Instr Halted)
-         ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w.
+         ∗ PC ↣ᵣ WCap pc_asid pc_p pc_b pc_e pc_a ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w.
   Proof.
     intros Hinstr Hvpc Hnclose.
     iIntros "(Hinv & Hj & Hpc & Hpca)".
@@ -599,16 +599,16 @@ Section cap_lang_spec_rules.
     by iFrame.
   Qed.
 
-  Lemma step_fail E K pc_p pc_b pc_e pc_a w :
+  Lemma step_fail E K pc_asid pc_p pc_b pc_e pc_a w :
     decodeInstrW w = Fail →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
     nclose specN ⊆ E →
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
-             ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
+             ∗ PC ↣ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
              ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
     ={E}=∗ ⤇ fill K (Instr Failed)
-         ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w.
+         ∗ PC ↣ᵣ WCap pc_asid pc_p pc_b pc_e pc_a ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w.
   Proof.
     intros Hinstr Hvpc Hnclose.
     iIntros "(Hinv & Hj & Hpc & Hpca)".

@@ -121,7 +121,7 @@ Goal forall p b e a,
   ExecPCPerm p →
   SubBoundsVirt b e a (a ^+ 5)%va →
   ContiguousRegionVirt a 5 →
-  isCorrectPC (WCap p b e a).
+  isCorrectPC (WCap asid p b e a).
 Proof. intros. solve_pure. Qed.
 
 Goal forall (r_t1 r_t2: RegName), exists r1 r2,
@@ -133,7 +133,7 @@ Goal forall p b e a,
   ExecPCPerm p →
   SubBoundsVirt b e a (a ^+ 5)%va →
   ContiguousRegionVirt a 5 →
-  isCorrectPC (WCap p b e (a ^+ 1)%va).
+  isCorrectPC (WCap asid p b e (a ^+ 1)%va).
 Proof. intros. solve_pure. Qed.
 
 Goal forall (r_t1 r_t2 r_t3: RegName), exists r1 r2 r3,

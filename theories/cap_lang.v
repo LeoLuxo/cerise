@@ -26,9 +26,9 @@ Definition update_mem (φ: ExecConf) (pa: PhysAddr) (w: Word): ExecConf := (reg 
 (* Note that the `None` values here also undo any previous changes that were tentatively made in the same step. This is more consistent across the board. *)
 Definition updatePC (φ: ExecConf): option Conf :=
   match (reg φ) !! PC with
-  | Some (WCap p b e a) =>
+  | Some (WCap asid p b e a) =>
     match (a + 1)%va with
-    | Some a' => let φ' := (update_reg φ PC (WCap p b e a')) in
+    | Some a' => let φ' := (update_reg φ PC (WCap asid p b e a')) in
                 Some (NextI, φ')
     | None => None
     end
@@ -100,9 +100,9 @@ Proof.
   intros HH. unshelve epose proof (lookup_weaken _ _ _ _ _ HH); eauto.
 Qed.
 
-Lemma word_of_argument_inr (regs: Reg) (arg: Z + RegName) p b e a:
-  word_of_argument regs arg = Some (WCap p b e a) →
-  (∃ r : RegName, arg = inr r ∧ regs !! r = Some (WCap p b e a)).
+Lemma word_of_argument_inr (regs: Reg) (arg: Z + RegName) asid p b e a:
+  word_of_argument regs arg = Some (WCap asid p b e a) →
+  (∃ r : RegName, arg = inr r ∧ regs !! r = Some (WCap asid p b e a)).
 Proof.
   intros HStoreV.
   unfold word_of_argument in HStoreV.
@@ -221,7 +221,7 @@ Section opsem.
     | Load dst src =>
       wsrc ← (reg φ) !! src;
       match wsrc with
-      | WCap p b e a =>
+      | WCap asid p b e a =>
         if readAllowed p && withinBoundsVirt b e a then
           asrc ← (mem φ) !! (TEMP_virt_to_phys a);
           updatePC (update_reg φ dst asrc)
@@ -232,7 +232,7 @@ Section opsem.
       tostore ← word_of_argument (reg φ) ρ;
       wdst ← (reg φ) !! dst;
       match wdst with
-      | WCap p b e a =>
+      | WCap asid p b e a =>
         if writeAllowed p && withinBoundsVirt b e a then
           updatePC (update_mem φ (TEMP_virt_to_phys a) tostore)
         else None
@@ -245,11 +245,11 @@ Section opsem.
       n ← z_of_argument (reg φ) ρ;
       wdst ← (reg φ) !! dst;
       match wdst with
-      | WCap p b e a =>
+      | WCap asid p b e a =>
         match p with
         | E => None
         | _ => match (a + n)%va with
-               | Some a' => updatePC (update_reg φ dst (WCap p b e a'))
+               | Some a' => updatePC (update_reg φ dst (WCap asid p b e a'))
                | None => None
                end
         end
@@ -264,11 +264,11 @@ Section opsem.
       n ← z_of_argument (reg φ) ρ ;
       wdst ← (reg φ) !! dst;
       match wdst with
-      | WCap permPair b e a =>
+      | WCap asid permPair b e a =>
         match permPair with
         | E => None
         | _ => if PermFlowsTo (decodePerm n) permPair then
-                updatePC (update_reg φ dst (WCap (decodePerm n) b e a))
+                updatePC (update_reg φ dst (WCap asid (decodePerm n) b e a))
               else None
         end
       | WSealRange p b e a =>
@@ -292,14 +292,14 @@ Section opsem.
   | Subseg dst ρ1 ρ2 =>
     wdst ← (reg φ) !! dst;
     match wdst with
-    | WCap p b e a =>
+    | WCap asid p b e a =>
       a1 ← addr_of_argument (reg φ) ρ1;
       a2 ← addr_of_argument (reg φ) ρ2;
       match p with
       | E => None
       | _ =>
         if isWithinVirt a1 a2 b e then
-          updatePC (update_reg φ dst (WCap p a1 a2 a))
+          updatePC (update_reg φ dst (WCap asid p a1 a2 a))
         else None
       end
     | WSealRange p b e a =>
@@ -313,28 +313,28 @@ Section opsem.
   | GetA dst r =>
     wr ← (reg φ) !! r;
     match wr with
-    | WCap _ _ _ a => updatePC (update_reg φ dst (WInt (z_of_virt_addr a)))
+    | WCap _ _ _ _ a => updatePC (update_reg φ dst (WInt (z_of_virt_addr a)))
     | WSealRange _ _ _ a => updatePC (update_reg φ dst (WInt a))
     | _ => None
     end
   | GetB dst r =>
     wr ← (reg φ) !! r;
     match wr with
-    | WCap _ b _ _ => updatePC (update_reg φ dst (WInt (z_of_virt_addr b)))
+    | WCap _ _ b _ _ => updatePC (update_reg φ dst (WInt (z_of_virt_addr b)))
     | WSealRange _ b _ _ => updatePC (update_reg φ dst (WInt b))
     | _ => None
     end
   | GetE dst r =>
     wr ← (reg φ) !! r;
     match wr with
-    | WCap _ _ e _ => updatePC (update_reg φ dst (WInt (z_of_virt_addr e)))
+    | WCap _ _ _ e _ => updatePC (update_reg φ dst (WInt (z_of_virt_addr e)))
     | WSealRange _ _ e _ => updatePC (update_reg φ dst (WInt e))
     | _ => None
     end
   | GetP dst r =>
     wr ← (reg φ) !! r;
     match wr with
-    | WCap p _ _ _ => updatePC (update_reg φ dst (WInt (encodePerm p)))
+    | WCap asid p _ _ _ => updatePC (update_reg φ dst (WInt (encodePerm p)))
     | WSealRange p _ _ _ => updatePC (update_reg φ dst (WInt (encodeSealPerms p)))
     | _ => None
     end
@@ -395,15 +395,15 @@ Section opsem.
         not (isCorrectPC wreg) →
         step (Executable, φ) (Failed, φ)
   | step_exec_memfail:
-      forall φ p b e a,
-        (reg φ) !! PC = Some (WCap p b e a) →
+      forall φ asid p b e a,
+        (reg φ) !! PC = Some (WCap asid p b e a) →
         (mem φ) !! (TEMP_virt_to_phys a) = None →
         step (Executable, φ) (Failed, φ)
   | step_exec_instr:
-      forall φ p b e a i c wa,
-        (reg φ) !! PC = Some (WCap p b e a) → (* only works for caps *)
+      forall φ asid p b e a i c wa,
+        (reg φ) !! PC = Some (WCap asid p b e a) → (* only works for caps *)
         (mem φ) !! (TEMP_virt_to_phys a) = Some wa →
-        isCorrectPC (WCap p b e a) →
+        isCorrectPC (WCap asid p b e a) →
         decodeInstrW wa = i →
         exec i φ = c →
         step (Executable, φ) (c.1, c.2).
@@ -414,7 +414,7 @@ Section opsem.
     intros. destruct (reg φ !! PC) as [wpc | ] eqn:Hreg.
     destruct (isCorrectPC_dec wpc) as [Hcorr | ].
     set (Hcorr' := Hcorr).
-    inversion Hcorr' as [???? _ _ Hre]. subst wpc.
+    inversion Hcorr'. subst wpc.
     destruct (mem φ !! (TEMP_virt_to_phys a)) as [wa | ] eqn:Hmem.
     all: eexists _,_; by econstructor.
   Qed.
@@ -428,9 +428,9 @@ Section opsem.
     intros * H1 H2; split; inv H1; inv H2; auto; try congruence.
   Qed.
 
-  Lemma step_exec_inv (r: Reg) p b e a m w instr (c: ConfFlag) (σ: ExecConf) :
-    r !! PC = Some (WCap p b e a) →
-    isCorrectPC (WCap p b e a) →
+  Lemma step_exec_inv (r: Reg) asid p b e a m w instr (c: ConfFlag) (σ: ExecConf) :
+    r !! PC = Some (WCap asid p b e a) →
+    isCorrectPC (WCap asid p b e a) →
     m !! (TEMP_virt_to_phys a) = Some w →
     decodeInstrW w = instr →
     step (Executable, (r, m)) (c, σ) →

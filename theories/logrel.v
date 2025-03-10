@@ -259,7 +259,7 @@ Section logrel.
   Lemma read_allowed_inv (a' a b e: Addr) p :
     (b ≤ a' ∧ a' < e)%Z →
     readAllowed p →
-    ⊢ (interp (WCap p b e a) →
+    ⊢ (interp (WCap asid p b e a) →
       (∃ P, inv (logN .@ a') (interp_ref_inv a' P) ∗ read_cond P interp ∗ if writeAllowed p then write_cond P interp else emp))%I.
   Proof.
     iIntros (Hin Ra) "Hinterp".
@@ -272,7 +272,7 @@ Section logrel.
   Lemma write_allowed_inv (a' a b e: Addr) p :
     (b ≤ a' ∧ a' < e)%Z →
     writeAllowed p →
-    ⊢ (interp (WCap p b e a) →
+    ⊢ (interp (WCap asid p b e a) →
       inv (logN .@ a') (interp_ref_inv a' interp))%I.
   Proof.
     iIntros (Hin Wa) "Hinterp".
@@ -296,13 +296,13 @@ Section logrel.
 
   Definition writeAllowedWord (w : Word) : Prop :=
     match w with
-    | WCap p _ _ _ => writeAllowed p = true
+    | WCap asid p _ _ _ => writeAllowed p = true
     | _ => False
     end.
 
   Definition hasValidAddress (w : Word) (a : Addr) : Prop :=
     match w with
-    | WCap p b e a' => (b ≤ a' ∧ a' < e)%Z ∧ a = a'
+    | WCap asid p b e a' => (b ≤ a' ∧ a' < e)%Z ∧ a = a'
     | _ => False
     end.
 
@@ -331,8 +331,8 @@ Section logrel.
     (b ≤ a' ∧ a' < e)%Z →
     readAllowed p →
     ⊢ (interp_registers r -∗
-      interp (WCap p b e a) -∗
-      (∃ P, inv (logN .@ a') (interp_ref_inv a' P) ∗ read_cond P interp ∗ if decide (writeAllowed_in_r_a (<[PC:=WCap p b e a]> r) a') then write_cond P interp else emp))%I.
+      interp (WCap asid p b e a) -∗
+      (∃ P, inv (logN .@ a') (interp_ref_inv a' P) ∗ read_cond P interp ∗ if decide (writeAllowed_in_r_a (<[PC:=WCap asid p b e a]> r) a') then write_cond P interp else emp))%I.
   Proof.
     iIntros (Hin Ra) "#Hregs #Hinterp".
     rewrite /interp_registers /interp_reg /=.
@@ -380,7 +380,7 @@ Section logrel.
     Forall (λ w, is_z w = true) l →
     PermFlowsTo RO p →
     ([∗ list] a;w ∈ finz.seq_between b e;l, a ↦ₐ w) ={E}=∗
-    interp (WCap p b e a).
+    interp (WCap asid p b e a).
   Proof.
     iIntros (Hl Hp) "H".
     iMod (region_inv_alloc with "[H]") as "H".
@@ -405,7 +405,7 @@ Section logrel.
     PermFlowsTo RO p →
     ([∗ list] w ∈ l, interp w) -∗
     ([∗ list] a;w ∈ finz.seq_between b e;l, a ↦ₐ w) ={E}=∗
-    interp (WCap p b e a).
+    interp (WCap asid p b e a).
   Proof.
     iIntros (Hp) "#Hl H".
     iMod (region_inv_alloc with "[H]") as "H".
@@ -480,13 +480,13 @@ Section logrel.
 
   Definition in_region (w : Word) (b e : Addr) :=
     match w with
-    | WCap p b' e' a => PermFlows RO p /\ (b <= b')%a /\ (e' <= e)%a
+    | WCap asid p b' e' a => PermFlows RO p /\ (b <= b')%a /\ (e' <= e)%a
     | _ => False
     end.
 
   Definition in_region_list (w : Word) (ls: list Addr) :=
     match w with
-    | WCap p b' e' a => PermFlows RO p /\ (forall x, b' <= x < e' -> x ∈ ls)%a
+    | WCap asid p b' e' a => PermFlows RO p /\ (forall x, b' <= x < e' -> x ∈ ls)%a
     | _ => False
     end.
 
@@ -568,7 +568,7 @@ Section logrel.
     PermFlowsTo RO p →
     Forall (λ w, is_z w = true \/ in_region w b e) l ->
     ([∗ list] a;w ∈ finz.seq_between b e;l, a ↦ₐ w) ={E}=∗
-    interp (WCap p b e a).
+    interp (WCap asid p b e a).
   Proof.
     iIntros (Hsub Hperm Hl) "Hl".
     iDestruct (region_valid_in_region_ind E [] (finz.seq_between b e) with "[] [Hl]") as "HH".

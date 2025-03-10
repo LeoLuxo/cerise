@@ -207,6 +207,22 @@ Qed.
 
 
 
+(* -------------------------------- Address Space Identifiers -----------------------------------*)
+
+Definition AsidNum: Z := 50000.
+Global Opaque AsidNum.
+
+Inductive Asid: Type :=
+| AddressSpaceID: (finz AsidNum) -> Asid.
+
+Declare Scope Asid_scope.
+Delimit Scope Asid_scope with asid.
+
+Notation "0" := (AddressSpaceID (@finz.FinZ AsidNum 0%Z eq_refl eq_refl)) : Asid_scope.
+
+Notation eqb_asid := (λ (i1 i2: Asid), Z.eqb i1 i2).
+Notation "i1 =? i2" := (eqb_asid i1 i2) : Asid_scope.
+
 
 
 

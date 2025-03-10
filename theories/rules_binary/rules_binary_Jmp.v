@@ -15,13 +15,13 @@ Section cap_lang_spec_rules.
   Implicit Types reg : gmap RegName Word.
   Implicit Types ms : gmap PhysAddr Word.
 
-  Lemma step_jmp_success E K pc_p pc_b pc_e pc_a w r w' :
+  Lemma step_jmp_success E K pc_asid pc_p pc_b pc_e pc_a w r w' :
     decodeInstrW w = Jmp r →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
     nclose specN ⊆ E →
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
-             ∗ ▷ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
+             ∗ ▷ PC ↣ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
              ∗ ▷ (TEMP_virt_to_phys pc_a) ↣ₐ w
              ∗ ▷ r ↣ᵣ w'
     ={E}=∗ ⤇ fill K (Instr NextI)
@@ -55,16 +55,16 @@ Section cap_lang_spec_rules.
     done. 
   Qed.
 
-  Lemma wp_jmp_successPC E K pc_p pc_b pc_e pc_a w :
+  Lemma wp_jmp_successPC E K pc_asid pc_p pc_b pc_e pc_a w :
     decodeInstrW w = Jmp PC →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
     nclose specN ⊆ E →
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
-             ∗ ▷ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
+             ∗ ▷ PC ↣ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
              ∗ ▷ (TEMP_virt_to_phys pc_a) ↣ₐ w
     ={E}=∗  ⤇ fill K (Instr NextI)
-        ∗ PC ↣ᵣ updatePcPerm (WCap pc_p pc_b pc_e pc_a)
+        ∗ PC ↣ᵣ updatePcPerm (WCap pc_asid pc_p pc_b pc_e pc_a)
         ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w.
   Proof.
     iIntros (Hinstr Hvpc Hnclose) "(Hinv & Hj & >HPC & >Hpc_a)".
@@ -86,7 +86,7 @@ Section cap_lang_spec_rules.
     { iNext. iExists _,_;iFrame. iPureIntro. eapply rtc_r;eauto. 
       exists [];eapply step_atomic with (t1:=[]) (t2:=[]);eauto. 
       econstructor;eauto;constructor. simpl.
-      eapply step_exec_instr with (c:=(NextI, (<[PC:=updatePcPerm (WCap pc_p pc_b pc_e pc_a)]> σr, σm)));
+      eapply step_exec_instr with (c:=(NextI, (<[PC:=updatePcPerm (WCap pc_asid pc_p pc_b pc_e pc_a)]> σr, σm)));
         [simplify_map_eq..|];eauto.
     }
     done. 

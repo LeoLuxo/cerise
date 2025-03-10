@@ -65,11 +65,11 @@ Section cap_lang_rules.
     cbn; iFrame; iApply Hcont; iFrame; iPureIntro;
     econstructor; eapply get_fail_case; eauto.
 
-  Lemma wp_AddSubLt Ep i pc_p pc_b pc_e pc_a w dst arg1 arg2 regs :
+  Lemma wp_AddSubLt Ep i pc_asid pc_p pc_b pc_e pc_a w dst arg1 arg2 regs :
     decodeInstrW w = i →
     is_AddSubLt i dst arg1 arg2 →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-    regs !! PC = Some (WCap pc_p pc_b pc_e pc_a) →
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
+    regs !! PC = Some (WCap pc_asid pc_p pc_b pc_e pc_a) →
     regs_of i ⊆ dom regs →
     {{{ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w ∗
         ▷ [∗ map] k↦y ∈ regs, k ↦ᵣ y }}}
@@ -143,7 +143,7 @@ Section cap_lang_rules.
     (* Success *)
 
     eapply (incrementPC_success_updatePC _ m) in Hregs'
-      as (p' & g' & b' & e' & a'' & a_pc' & HPC'' & HuPC & ->).
+      as (asid' & p' & g' & b' & e' & a'' & a_pc' & HPC'' & HuPC & ->).
     eapply updatePC_success_incl with (m':=m) in HuPC. 2: by eapply insert_mono; eauto. rewrite HuPC in Hstep.
     simplify_pair_eq. iFrame.
     iMod ((gen_heap_update_inSepM _ _ dst) with "Hr Hmap") as "[Hr Hmap]"; eauto.
@@ -153,19 +153,19 @@ Section cap_lang_rules.
 
   (* Derived specifications *)
 
-  Lemma wp_add_sub_lt_success_z_z E dst pc_p pc_b pc_e pc_a w wdst ins n1 n2 pc_a' :
+  Lemma wp_add_sub_lt_success_z_z E dst pc_asid pc_p pc_b pc_e pc_a w wdst ins n1 n2 pc_a' :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inl n1) (inl n2) →
     (pc_a + 1)%va = Some pc_a' →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) ->
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) ->
 
-    {{{ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
+    {{{ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
         ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ dst ↦ᵣ wdst
     }}}
       Instr Executable @ E
       {{{ RET NextIV;
-          PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
+          PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a'
           ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ dst ↦ᵣ WInt (denote ins n1 n2)
       }}}.
@@ -185,20 +185,20 @@ Section cap_lang_rules.
       destruct Hfail; try incrementPC_inv; simplify_map_eq; eauto. congruence. }
   Qed.
 
-  Lemma wp_add_sub_lt_success_r_z E dst pc_p pc_b pc_e pc_a w wdst ins r1 n1 n2 pc_a' :
+  Lemma wp_add_sub_lt_success_r_z E dst pc_asid pc_p pc_b pc_e pc_a w wdst ins r1 n1 n2 pc_a' :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inr r1) (inl n2) →
     (pc_a + 1)%va = Some pc_a' →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) ->
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) ->
 
-    {{{ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
+    {{{ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
         ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ r1 ↦ᵣ WInt n1
         ∗ dst ↦ᵣ wdst
     }}}
       Instr Executable @ E
       {{{ RET NextIV;
-          PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
+          PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a'
           ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ r1 ↦ᵣ WInt n1
           ∗ dst ↦ᵣ WInt (denote ins n1 n2)
@@ -220,20 +220,20 @@ Section cap_lang_rules.
       destruct Hfail; try incrementPC_inv; simplify_map_eq; eauto. congruence. }
   Qed.
 
-  Lemma wp_add_sub_lt_success_z_r E dst pc_p pc_b pc_e pc_a w wdst ins n1 r2 n2 pc_a' :
+  Lemma wp_add_sub_lt_success_z_r E dst pc_asid pc_p pc_b pc_e pc_a w wdst ins n1 r2 n2 pc_a' :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inl n1) (inr r2) →
     (pc_a + 1)%va = Some pc_a' →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) ->
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) ->
 
-    {{{ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
+    {{{ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
         ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ r2 ↦ᵣ WInt n2
         ∗ dst ↦ᵣ wdst
     }}}
       Instr Executable @ E
       {{{ RET NextIV;
-          PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
+          PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a'
           ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ r2 ↦ᵣ WInt n2
           ∗ dst ↦ᵣ WInt (denote ins n1 n2)
@@ -255,13 +255,13 @@ Section cap_lang_rules.
       destruct Hfail; try incrementPC_inv; simplify_map_eq; eauto. congruence. }
   Qed.
 
-  Lemma wp_add_sub_lt_success_r_r E dst pc_p pc_b pc_e pc_a w wdst ins r1 n1 r2 n2 pc_a' :
+  Lemma wp_add_sub_lt_success_r_r E dst pc_asid pc_p pc_b pc_e pc_a w wdst ins r1 n1 r2 n2 pc_a' :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inr r1) (inr r2) →
     (pc_a + 1)%va = Some pc_a' →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) ->
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) ->
 
-    {{{ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
+    {{{ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
         ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ r1 ↦ᵣ WInt n1
         ∗ r2 ↦ᵣ WInt n2
@@ -269,7 +269,7 @@ Section cap_lang_rules.
     }}}
       Instr Executable @ E
       {{{ RET NextIV;
-          PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
+          PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a'
           ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ r1 ↦ᵣ WInt n1
           ∗ r2 ↦ᵣ WInt n2
@@ -292,20 +292,20 @@ Section cap_lang_rules.
       destruct Hfail; try incrementPC_inv; simplify_map_eq; eauto. congruence. }
   Qed.
 
-  Lemma wp_add_sub_lt_success_r_r_same E dst pc_p pc_b pc_e pc_a w wdst ins r n pc_a' :
+  Lemma wp_add_sub_lt_success_r_r_same E dst pc_asid pc_p pc_b pc_e pc_a w wdst ins r n pc_a' :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inr r) (inr r) →
     (pc_a + 1)%va = Some pc_a' →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) ->
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) ->
 
-    {{{ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
+    {{{ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
         ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ r ↦ᵣ WInt n
         ∗ dst ↦ᵣ wdst
     }}}
       Instr Executable @ E
       {{{ RET NextIV;
-          PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
+          PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a'
           ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ r ↦ᵣ WInt n
           ∗ dst ↦ᵣ WInt (denote ins n n)
@@ -327,19 +327,19 @@ Section cap_lang_rules.
       destruct Hfail; try incrementPC_inv; simplify_map_eq; eauto. congruence. }
   Qed.
 
-  Lemma wp_add_sub_lt_success_dst_z E dst pc_p pc_b pc_e pc_a w ins n1 n2 pc_a' :
+  Lemma wp_add_sub_lt_success_dst_z E dst pc_asid pc_p pc_b pc_e pc_a w ins n1 n2 pc_a' :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inr dst) (inl n2) →
     (pc_a + 1)%va = Some pc_a' →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) ->
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) ->
 
-    {{{ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
+    {{{ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
         ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ dst ↦ᵣ WInt n1
     }}}
       Instr Executable @ E
       {{{ RET NextIV;
-          PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
+          PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a'
           ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ dst ↦ᵣ WInt (denote ins n1 n2)
       }}}.
@@ -359,19 +359,19 @@ Section cap_lang_rules.
       destruct Hfail; try incrementPC_inv; simplify_map_eq; eauto. congruence. }
   Qed.
 
-  Lemma wp_add_sub_lt_success_z_dst E dst pc_p pc_b pc_e pc_a w ins n1 n2 pc_a' :
+  Lemma wp_add_sub_lt_success_z_dst E dst pc_asid pc_p pc_b pc_e pc_a w ins n1 n2 pc_a' :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inl n1) (inr dst) →
     (pc_a + 1)%va = Some pc_a' →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) ->
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) ->
 
-    {{{ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
+    {{{ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
         ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ dst ↦ᵣ WInt n2
     }}}
       Instr Executable @ E
       {{{ RET NextIV;
-          PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
+          PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a'
           ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ dst ↦ᵣ WInt (denote ins n1 n2)
       }}}.
@@ -391,20 +391,20 @@ Section cap_lang_rules.
       destruct Hfail; try incrementPC_inv; simplify_map_eq; eauto. congruence. }
   Qed.
 
-  Lemma wp_add_sub_lt_success_dst_r E dst pc_p pc_b pc_e pc_a w ins n1 r2 n2 pc_a' :
+  Lemma wp_add_sub_lt_success_dst_r E dst pc_asid pc_p pc_b pc_e pc_a w ins n1 r2 n2 pc_a' :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inr dst) (inr r2) →
     (pc_a + 1)%va = Some pc_a' →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) ->
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) ->
 
-    {{{ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
+    {{{ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
         ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ r2 ↦ᵣ WInt n2
         ∗ dst ↦ᵣ WInt n1
     }}}
       Instr Executable @ E
       {{{ RET NextIV;
-          PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
+          PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a'
           ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ r2 ↦ᵣ WInt n2
           ∗ dst ↦ᵣ WInt (denote ins n1 n2)
@@ -426,20 +426,20 @@ Section cap_lang_rules.
       destruct Hfail; try incrementPC_inv; simplify_map_eq; eauto. congruence. }
   Qed.
 
-  Lemma wp_add_sub_lt_success_r_dst E dst pc_p pc_b pc_e pc_a w ins r1 n1 n2 pc_a' :
+  Lemma wp_add_sub_lt_success_r_dst E dst pc_asid pc_p pc_b pc_e pc_a w ins r1 n1 n2 pc_a' :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inr r1) (inr dst) →
     (pc_a + 1)%va = Some pc_a' →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) ->
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) ->
 
-    {{{ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
+    {{{ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
         ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ r1 ↦ᵣ WInt n1
         ∗ dst ↦ᵣ WInt n2
     }}}
       Instr Executable @ E
       {{{ RET NextIV;
-          PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
+          PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a'
           ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ r1 ↦ᵣ WInt n1
           ∗ dst ↦ᵣ WInt (denote ins n1 n2)
@@ -461,19 +461,19 @@ Section cap_lang_rules.
       destruct Hfail; try incrementPC_inv; simplify_map_eq; eauto. congruence. }
   Qed.
 
-  Lemma wp_add_sub_lt_success_dst_dst E dst pc_p pc_b pc_e pc_a w ins n pc_a' :
+  Lemma wp_add_sub_lt_success_dst_dst E dst pc_asid pc_p pc_b pc_e pc_a w ins n pc_a' :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inr dst) (inr dst) →
     (pc_a + 1)%va = Some pc_a' →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) ->
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) ->
 
-    {{{ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
+    {{{ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
         ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ dst ↦ᵣ WInt n
     }}}
       Instr Executable @ E
       {{{ RET NextIV;
-          PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
+          PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a'
           ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ dst ↦ᵣ WInt (denote ins n n)
       }}}.
@@ -494,12 +494,12 @@ Section cap_lang_rules.
   Qed.
 
   (* Slightly generalized: fails in all cases where r2 does not contain an integer. *)
-  Lemma wp_add_sub_lt_fail_z_r E ins dst n1 r2 w w2 wdst pc_p pc_b pc_e pc_a :
+  Lemma wp_add_sub_lt_fail_z_r E ins dst n1 r2 w w2 wdst pc_asid pc_p pc_b pc_e pc_a :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inl n1) (inr r2) →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
     is_z w2 = false →
-    {{{ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w ∗ dst ↦ᵣ wdst ∗ r2 ↦ᵣ w2 }}}
+    {{{ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w ∗ dst ↦ᵣ wdst ∗ r2 ↦ᵣ w2 }}}
       Instr Executable
             @ E
     {{{ RET FailedV; (TEMP_virt_to_phys pc_a) ↦ₐ w }}}.
@@ -514,12 +514,12 @@ Section cap_lang_rules.
     { (* Failure, done *) by iApply "Hφ". }
   Qed.
 
-  Lemma wp_add_sub_lt_fail_r_r_1 E ins dst r1 r2 w wdst w1 w2 pc_p pc_b pc_e pc_a :
+  Lemma wp_add_sub_lt_fail_r_r_1 E ins dst r1 r2 w wdst w1 w2 pc_asid pc_p pc_b pc_e pc_a :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inr r1) (inr r2) →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
     is_z w1 = false →
-    {{{ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w ∗ dst ↦ᵣ wdst ∗ r1 ↦ᵣ w1 ∗ r2 ↦ᵣ w2 }}}
+    {{{ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w ∗ dst ↦ᵣ wdst ∗ r1 ↦ᵣ w1 ∗ r2 ↦ᵣ w2 }}}
       Instr Executable
       @ E
       {{{ RET FailedV; (TEMP_virt_to_phys pc_a) ↦ₐ w }}}.
@@ -534,12 +534,12 @@ Section cap_lang_rules.
     { (* Failure, done *) by iApply "Hφ". }
   Qed.
 
-  Lemma wp_add_sub_lt_fail_r_r_2 E ins dst r1 r2 w wdst w2 w3 pc_p pc_b pc_e pc_a :
+  Lemma wp_add_sub_lt_fail_r_r_2 E ins dst r1 r2 w wdst w2 w3 pc_asid pc_p pc_b pc_e pc_a :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inr r1) (inr r2) →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
     is_z w3 = false →
-    {{{ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w ∗ dst ↦ᵣ wdst ∗ r1 ↦ᵣ w2 ∗ r2 ↦ᵣ w3}}}
+    {{{ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w ∗ dst ↦ᵣ wdst ∗ r1 ↦ᵣ w2 ∗ r2 ↦ᵣ w3}}}
       Instr Executable
       @ E
       {{{ RET FailedV; (TEMP_virt_to_phys pc_a) ↦ₐ w }}}.

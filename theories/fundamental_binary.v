@@ -48,7 +48,7 @@ Section fundamental.
   Qed.
 
   Lemma interp_argeq p b e a p' b' e' a' :
-    ⊢ (interp (WCap p b e a,WCap p' b' e' a') → ⌜p = p' ∧ b = b' ∧ e = e' ∧ a = a'⌝)%I.
+    ⊢ (interp (WCap asid p b e a,WCap asid p' b' e' a') → ⌜p = p' ∧ b = b' ∧ e = e' ∧ a = a'⌝)%I.
   Proof.
     iIntros "Hinterp".
     rewrite fixpoint_interp1_eq /=.
@@ -57,7 +57,7 @@ Section fundamental.
   Qed.
 
   Theorem fundamental_binary r p b e a p' b' e' a' :
-    ⊢ (spec_ctx → interp (WCap p b e a,WCap p' b' e' a') → interp_expression r (WCap p b e a,WCap p' b' e' a'))%I.
+    ⊢ (spec_ctx → interp (WCap asid p b e a,WCap asid p' b' e' a') → interp_expression r (WCap asid p b e a,WCap asid p' b' e' a'))%I.
   Proof.
     iIntros "#Hspec #Hval".
     iIntros "[[Hfull Hreg] [Hmreg [Hsreg [Hown Hs]]]]". simpl.
@@ -68,7 +68,7 @@ Section fundamental.
     iIntros "#Hspec #Hinv".
     iDestruct "Hfull" as "%". iDestruct "Hreg" as "#Hreg".
     iApply (wp_bind (fill [SeqCtx])).
-    destruct (decide (isCorrectPC (WCap p b e a))).
+    destruct (decide (isCorrectPC (WCap asid p b e a))).
     - assert ((b <= a)%a ∧ (a < e)%a) as Hbae.
       { eapply in_range_is_correctPC; eauto. solve_addr. }
       assert (p = RX ∨ p = RWX) as Hp.
@@ -77,7 +77,7 @@ Section fundamental.
       rewrite /interp_ref_inv /=.
       iInv (logN.@a) as (w w') "[>Ha [>Ha' HP] ]" "Hcls".
       iDestruct ((big_sepM_delete _ _ PC) with "Hmreg") as "[HPC Hmap]";
-        first apply (lookup_insert _ _ (WCap p b e a)).
+        first apply (lookup_insert _ _ (WCap asid p b e a)).
       destruct (decodeInstrW w) eqn:Hi. (* proof by cases on each instruction *)
       + (* Jmp *) iApply (jmp_case with "[] [] [] [] [] [] [Hsreg] [Hown] [Hs] [Ha] [Ha'] [HP] [Hcls] [HPC] [Hmap]"); try iAssumption; eauto.
       + (* Jnz *) iApply (jnz_case with "[] [] [] [] [] [] [Hsreg] [Hown] [Hs] [Ha] [Ha'] [HP] [Hcls] [HPC] [Hmap]"); try iAssumption; eauto.
@@ -116,7 +116,7 @@ Section fundamental.
         iAssert (⌜w = w'⌝)%I as %Heqw.
         { iDestruct "Hread" as "[Hread _]". iSpecialize ("Hread" with "HP"). by iApply interp_eq. }
         destruct r as [r1 r2]. simpl in *.
-        iDestruct (interp_reg_eq r1 r2 (WCap p b e a) with "[]") as %Heq;[iSplit;auto|]. rewrite -!Heq.
+        iDestruct (interp_reg_eq r1 r2 (WCap asid p b e a) with "[]") as %Heq;[iSplit;auto|]. rewrite -!Heq.
         iMod (step_halt _ [SeqCtx] with "[$Ha' $HsPC $Hs $Hspec]") as "(Hs' & HsPC & Ha') /=";[rewrite Heqw in Hi|..];eauto.
         { solve_ndisj. }
         iApply wp_pure_step_later; auto.
@@ -130,8 +130,8 @@ Section fundamental.
         iDestruct ((big_sepM_delete _ _ PC) with "[HPC Hmap]") as "Hmap /=".
         apply lookup_insert. rewrite delete_insert_delete. iFrame.
         rewrite insert_insert.
-        iExists (<[PC:=WCap p b e a]> r1, <[PC:=WCap p b e a]> r2). iFrame.
-        iAssert (∀ r0 : RegName, ⌜is_Some (<[PC:=WCap p b e a]> r1 !! r0) ∧ is_Some (<[PC:=WCap p b e a]> r2 !! r0)⌝)%I as "HA".
+        iExists (<[PC:=WCap asid p b e a]> r1, <[PC:=WCap asid p b e a]> r2). iFrame.
+        iAssert (∀ r0 : RegName, ⌜is_Some (<[PC:=WCap asid p b e a]> r1 !! r0) ∧ is_Some (<[PC:=WCap asid p b e a]> r2 !! r0)⌝)%I as "HA".
         { iPureIntro. intros. simpl. destruct (reg_eq_dec PC x).
           - subst x. rewrite !lookup_insert. split; eauto.
           - rewrite !lookup_insert_ne; auto. }
@@ -140,7 +140,7 @@ Section fundamental.
           [apply lookup_insert|iFrame|rewrite -Heq; iFrame].
     - (* Not correct PC *)
      iDestruct ((big_sepM_delete _ _ PC) with "Hmreg") as "[HPC Hmap]";
-       first apply (lookup_insert _ _ (WCap p b e a)).
+       first apply (lookup_insert _ _ (WCap asid p b e a)).
      iApply (wp_notCorrectPC with "HPC"); eauto.
      iNext. iIntros "HPC /=".
      iApply wp_pure_step_later; auto.
@@ -152,10 +152,10 @@ Section fundamental.
   (* The fundamental theorem implies the binary exec_cond *)
 
   Definition exec_cond_binary b e p b' e' p' : iProp Σ :=
-    (∀ a r, ⌜a ∈ₐ [[ b , e ]]⌝ → ▷ □ interp_expression r (WCap p b e a, WCap p' b' e' a)%I).
+    (∀ a r, ⌜a ∈ₐ [[ b , e ]]⌝ → ▷ □ interp_expression r (WCap asid p b e a, WCap asid p' b' e' a)%I).
 
   Lemma interp_exec_cond p b e a p' b' e' :
-    p ≠ E -> spec_ctx -∗ interp (WCap p b e a,WCap p' b' e' a) -∗ exec_cond_binary b e p b' e' p'.
+    p ≠ E -> spec_ctx -∗ interp (WCap asid p b e a,WCap asid p' b' e' a) -∗ exec_cond_binary b e p b' e' p'.
   Proof.
     iIntros (Hnp) "#Hspec #Hw".
     iIntros (a0 r Hin). iNext. iModIntro.
@@ -168,9 +168,9 @@ Section fundamental.
   (* We can use the above fact to create a special "jump or fail pattern" when jumping to an unknown adversary *)
 
   Lemma exec_wp p b e a p' b' e' :
-    isCorrectPC (WCap p b e a) ->
+    isCorrectPC (WCap asid p b e a) ->
     exec_cond_binary b e p b' e' p' -∗
-    ∀ r, ▷ □ (interp_expr interp r) (WCap p b e a,WCap p' b' e' a).
+    ∀ r, ▷ □ (interp_expr interp r) (WCap asid p b e a,WCap asid p' b' e' a).
   Proof.
     iIntros (Hvpc) "#Hexec".
     rewrite /exec_cond_binary /enter_cond.
@@ -183,7 +183,7 @@ Section fundamental.
   Lemma jmp_or_fail_spec w w' φ :
     ⊢ (spec_ctx -∗ interp (w,w')
     -∗ (if decide (isCorrectPC (updatePcPerm w)) then
-          (∃ p b e a, ⌜w = WCap p b e a⌝
+          (∃ p b e a, ⌜w = WCap asid p b e a⌝
           ∗ ∀ r, ▷ □ (interp_expr interp r) (updatePcPerm w,updatePcPerm w'))
         else
           φ FailedV ∗ PC ↦ᵣ updatePcPerm w -∗ WP Seq (Instr Executable) {{ φ }} ))%I.

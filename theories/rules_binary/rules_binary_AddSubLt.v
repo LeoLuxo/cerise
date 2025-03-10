@@ -14,11 +14,11 @@ Section cap_lang_spec_rules.
   Implicit Types reg : gmap RegName Word.
   Implicit Types ms : gmap PhysAddr Word.
 
-  Lemma step_AddSubLt Ep K i pc_p pc_b pc_e pc_a w dst arg1 arg2 regs :
+  Lemma step_AddSubLt Ep K i pc_asid pc_p pc_b pc_e pc_a w dst arg1 arg2 regs :
     decodeInstrW w = i →
     is_AddSubLt i dst arg1 arg2 →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-    regs !! PC = Some (WCap pc_p pc_b pc_e pc_a) →
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
+    regs !! PC = Some (WCap pc_asid pc_p pc_b pc_e pc_a) →
     regs_of i ⊆ dom regs →
 
     nclose specN ⊆ Ep →
@@ -86,7 +86,7 @@ Section cap_lang_spec_rules.
     (* Success *)
 
     eapply (incrementPC_success_updatePC _ σm) in Hregs'
-      as (p' & g' & b' & e' & a'' & a_pc' & HPC'' & HuPC & ->).
+      as (asid' & p' & g' & b' & e' & a'' & a_pc' & HPC'' & HuPC & ->).
     eapply updatePC_success_incl with (m':=σm) in HuPC. 2: by eapply insert_mono; eauto. rewrite HuPC in Hstep.
     simplify_pair_eq.
     iMod ((regspec_heap_update_inSepM _ _ _ dst) with "Hown Hmap") as "[Hr Hmap]"; eauto.
@@ -99,14 +99,14 @@ Section cap_lang_spec_rules.
     iModIntro. iPureIntro. econstructor; eauto.
   Qed.
 
-  Lemma step_AddSubLt_fail E K ins dst n1 r2 w wdst pc_p pc_b pc_e pc_a p b e a :
+  Lemma step_AddSubLt_fail E K ins dst n1 r2 w wdst pc_asid pc_p pc_b pc_e pc_a asid p b e a :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inl n1) (inr r2) →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
     nclose specN ⊆ E →
 
-    spec_ctx ∗ ⤇ fill K (Instr Executable) ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w ∗ dst ↣ᵣ wdst
-             ∗ r2 ↣ᵣ WCap p b e a
+    spec_ctx ∗ ⤇ fill K (Instr Executable) ∗ PC ↣ᵣ WCap pc_asid pc_p pc_b pc_e pc_a ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w ∗ dst ↣ᵣ wdst
+             ∗ r2 ↣ᵣ WCap asid p b e a
     ={E}=∗ ⤇ fill K (of_val FailedV).
   Proof.
     iIntros (Hdecode Hinstr Hvpc Hnclose) "(Hown & Hj & HPC & Hpc_a & Hdst & Hr2)".
@@ -118,21 +118,21 @@ Section cap_lang_spec_rules.
     { (* Failure, done *) by iFrame. }
   Qed.
 
-  Lemma step_add_sub_lt_success_z_r E K dst pc_p pc_b pc_e pc_a w wdst ins n1 r2 n2 pc_a' :
+  Lemma step_add_sub_lt_success_z_r E K dst pc_asid pc_p pc_b pc_e pc_a w wdst ins n1 r2 n2 pc_a' :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inl n1) (inr r2) →
     (pc_a + 1)%va = Some pc_a' →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) ->
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) ->
     nclose specN ⊆ E →
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
-             ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
+             ∗ PC ↣ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
              ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
              ∗ r2 ↣ᵣ WInt n2
              ∗ dst ↣ᵣ wdst
     ={E}=∗
              ⤇ fill K (of_val NextIV)
-             ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a'
+             ∗ PC ↣ᵣ WCap pc_asid pc_p pc_b pc_e pc_a'
              ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
              ∗ r2 ↣ᵣ WInt n2
              ∗ dst ↣ᵣ WInt (denote ins n1 n2).
@@ -152,21 +152,21 @@ Section cap_lang_spec_rules.
       destruct Hfail; try incrementPC_inv; simplify_map_eq; eauto. congruence. }
   Qed.
 
-  Lemma step_add_sub_lt_success_dst_r E K dst pc_p pc_b pc_e pc_a w ins n1 r2 n2 pc_a' :
+  Lemma step_add_sub_lt_success_dst_r E K dst pc_asid pc_p pc_b pc_e pc_a w ins n1 r2 n2 pc_a' :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inr dst) (inr r2) →
     (pc_a + 1)%va = Some pc_a' →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) ->
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) ->
 
     nclose specN ⊆ E →
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
-             ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
+             ∗ PC ↣ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
              ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
              ∗ r2 ↣ᵣ WInt n2
              ∗ dst ↣ᵣ WInt n1
     ={E}=∗ ⤇ fill K (Instr NextI)
-        ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a'
+        ∗ PC ↣ᵣ WCap pc_asid pc_p pc_b pc_e pc_a'
         ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
         ∗ r2 ↣ᵣ WInt n2
         ∗ dst ↣ᵣ WInt (denote ins n1 n2).
@@ -187,19 +187,19 @@ Section cap_lang_spec_rules.
       incrementPC_inv;[|rewrite lookup_insert_ne// lookup_insert; eauto]. congruence. }
   Qed.
 
-  Lemma step_add_sub_lt_success_z_dst E K dst pc_p pc_b pc_e pc_a w ins n1 n2 pc_a' :
+  Lemma step_add_sub_lt_success_z_dst E K dst pc_asid pc_p pc_b pc_e pc_a w ins n1 n2 pc_a' :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inl n1) (inr dst) →
     (pc_a + 1)%va = Some pc_a' →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) ->
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) ->
     nclose specN ⊆ E →
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
-             ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
+             ∗ PC ↣ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
              ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
              ∗ dst ↣ᵣ WInt n2
     ={E}=∗ ⤇ fill K (Instr NextI)
-        ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a'
+        ∗ PC ↣ᵣ WCap pc_asid pc_p pc_b pc_e pc_a'
         ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
         ∗ dst ↣ᵣ WInt (denote ins n1 n2).
   Proof.
@@ -218,19 +218,19 @@ Section cap_lang_spec_rules.
       incrementPC_inv; [|rewrite lookup_insert_ne// lookup_insert; eauto]. congruence. }
   Qed.
 
-  Lemma step_add_sub_lt_success_dst_z E K dst pc_p pc_b pc_e pc_a w ins n1 n2 pc_a' :
+  Lemma step_add_sub_lt_success_dst_z E K dst pc_asid pc_p pc_b pc_e pc_a w ins n1 n2 pc_a' :
     decodeInstrW w = ins →
     is_AddSubLt ins dst (inr dst) (inl n2) →
     (pc_a + 1)%va = Some pc_a' →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) ->
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) ->
     nclose specN ⊆ E →
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
-             ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
+             ∗ PC ↣ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
              ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
              ∗ dst ↣ᵣ WInt n1
     ={E}=∗ ⤇ fill K (Instr NextI)
-        ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a'
+        ∗ PC ↣ᵣ WCap pc_asid pc_p pc_b pc_e pc_a'
         ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
         ∗ dst ↣ᵣ WInt (denote ins n1 n2).
   Proof.

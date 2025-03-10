@@ -34,10 +34,10 @@ Section cap_lang_rules.
       nonZero w = true →
       Jnz_spec regs dst src (<[PC := updatePcPerm w' ]> regs) NextIV.
 
-  Lemma wp_Jnz Ep pc_p pc_b pc_e pc_a w dst src regs :
+  Lemma wp_Jnz Ep pc_asid pc_p pc_b pc_e pc_a w dst src regs :
     decodeInstrW w = Jnz dst src ->
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-    regs !! PC = Some (WCap pc_p pc_b pc_e pc_a) →
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
+    regs !! PC = Some (WCap pc_asid pc_p pc_b pc_e pc_a) →
     regs_of (Jnz dst src) ⊆ dom regs →
 
     {{{ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w ∗
@@ -80,19 +80,19 @@ Section cap_lang_rules.
       iFrame. iApply "Hφ". iFrame. iPureIntro; econstructor; eauto. }
 
     destruct (incrementPC_success_updatePC _ m _ HX)
-      as (p' & g' & b' & e' & a'' & a_pc' & HPC'' & HuPC & ->).
+      as (asid' & p' & g' & b' & e' & a'' & a_pc' & HPC'' & HuPC & ->).
     eapply updatePC_success_incl with (m':=m) in HuPC; eauto. rewrite HuPC in Hstep.
     simplify_pair_eq.
     iMod ((gen_heap_update_inSepM _ _ PC) with "Hr Hmap") as "[Hr Hmap]"; eauto.
     iFrame. iApply "Hφ". iFrame. iPureIntro. econstructor 2; eauto.
   Qed.
 
-  Lemma wp_jnz_success_jmp E r1 r2 pc_p pc_b pc_e pc_a w w1 w2 :
+  Lemma wp_jnz_success_jmp E r1 r2 pc_asid pc_p pc_b pc_e pc_a w w1 w2 :
     decodeInstrW w = Jnz r1 r2 →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
     w2 ≠ WInt 0%Z →
 
-    {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
+    {{{ ▷ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
         ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ r1 ↦ᵣ w1
         ∗ ▷ r2 ↦ᵣ w2 }}}
@@ -121,12 +121,12 @@ Section cap_lang_rules.
      iDestruct (regs_of_map_3 with "Hmap") as "(?&?&?)"; eauto; iFrame. }
   Qed.
 
-  Lemma wp_jnz_success_jmp2 E r2 pc_p pc_b pc_e pc_a w w2 :
+  Lemma wp_jnz_success_jmp2 E r2 pc_asid pc_p pc_b pc_e pc_a w w2 :
     decodeInstrW w = Jnz r2 r2 →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
     w2 ≠ WInt 0%Z →
 
-    {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
+    {{{ ▷ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
         ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ r2 ↦ᵣ w2 }}}
       Instr Executable @ E
@@ -153,15 +153,15 @@ Section cap_lang_rules.
      iDestruct (regs_of_map_2 with "Hmap") as "(?&?)"; eauto; iFrame. }
   Qed.
 
-  Lemma wp_jnz_success_jmpPC E pc_p pc_b pc_e pc_a w :
+  Lemma wp_jnz_success_jmpPC E pc_asid pc_p pc_b pc_e pc_a w :
     decodeInstrW w = Jnz PC PC →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
 
-    {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
+    {{{ ▷ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
         ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w }}}
       Instr Executable @ E
       {{{ RET NextIV;
-          PC ↦ᵣ updatePcPerm (WCap pc_p pc_b pc_e pc_a)
+          PC ↦ᵣ updatePcPerm (WCap pc_asid pc_p pc_b pc_e pc_a)
           ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w }}}.
   Proof.
     iIntros (Hinstr Hvpc ϕ) "(>HPC & >Hpc_a) Hφ".
@@ -174,17 +174,17 @@ Section cap_lang_rules.
      iDestruct (regs_of_map_1 with "Hmap") as "?"; eauto; iFrame. }
   Qed.
 
-  Lemma wp_jnz_success_jmpPC1 E r2 pc_p pc_b pc_e pc_a w w2 :
+  Lemma wp_jnz_success_jmpPC1 E r2 pc_asid pc_p pc_b pc_e pc_a w w2 :
     decodeInstrW w = Jnz PC r2 →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
     w2 ≠ WInt 0%Z →
 
-    {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
+    {{{ ▷ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
         ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ r2 ↦ᵣ w2 }}}
       Instr Executable @ E
       {{{ RET NextIV;
-          PC ↦ᵣ updatePcPerm (WCap pc_p pc_b pc_e pc_a)
+          PC ↦ᵣ updatePcPerm (WCap pc_asid pc_p pc_b pc_e pc_a)
           ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ r2 ↦ᵣ w2 }}}.
   Proof.
@@ -206,11 +206,11 @@ Section cap_lang_rules.
      iDestruct (regs_of_map_2 with "Hmap") as "(?&?)"; eauto; iFrame. }
   Qed.
 
-  Lemma wp_jnz_success_jmpPC2 E r1 pc_p pc_b pc_e pc_a w w1 :
+  Lemma wp_jnz_success_jmpPC2 E r1 pc_asid pc_p pc_b pc_e pc_a w w1 :
     decodeInstrW w = Jnz r1 PC →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
 
-    {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
+    {{{ ▷ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
         ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ r1 ↦ᵣ w1 }}}
       Instr Executable @ E
@@ -230,18 +230,18 @@ Section cap_lang_rules.
      iDestruct (regs_of_map_2 with "Hmap") as "(?&?)"; eauto; iFrame. }
   Qed.
 
-  Lemma wp_jnz_success_next E r1 r2 pc_p pc_b pc_e pc_a pc_a' w w1 :
+  Lemma wp_jnz_success_next E r1 r2 pc_asid pc_p pc_b pc_e pc_a pc_a' w w1 :
     decodeInstrW w = Jnz r1 r2 →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
     (pc_a + 1)%va = Some pc_a' →
 
-    {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
+    {{{ ▷ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
         ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ r1 ↦ᵣ w1
         ∗ ▷ r2 ↦ᵣ WInt 0%Z }}}
       Instr Executable @ E
       {{{ RET NextIV;
-          PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
+          PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a'
           ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ r1 ↦ᵣ w1
           ∗ r2 ↦ᵣ WInt 0%Z }}}.

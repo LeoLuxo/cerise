@@ -19,7 +19,7 @@ Fixpoint machine_run `{MachineParameters} (fuel: nat) (c: Conf): option ConfFlag
       | Some pc =>
         if isCorrectPCb pc then (
           let a := match pc with
-                  | WCap _ _ _ a => a
+                  | WCap _ _ _ _ a => a
                   | _ => top_virt (* dummy *)
                   end in
           match m !! (TEMP_virt_to_phys a) with
@@ -58,7 +58,7 @@ Proof.
       constructor. }
     destruct (isCorrectPCb wpc) eqn:HPC.
     { apply isCorrectPCb_isCorrectPC in HPC.
-      destruct wpc eqn:Hr; [by inversion HPC| | by inversion HPC]. destruct sb as [p b e a | ]; last by inversion HPC.
+      destruct wpc eqn:Hr; [by inversion HPC| | by inversion HPC]. destruct sb as [asid p b e a | ]; last by inversion HPC.
       destruct (m !! (TEMP_virt_to_phys a)) as [wa | ] eqn:HeMem.
       2: {
         eexists. eapply rtc_l. unfold erased_step. exists [].

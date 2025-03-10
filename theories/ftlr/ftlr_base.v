@@ -20,7 +20,7 @@ Section fundamental.
         (b e a : Addr) (w : Word) (i: instr) (P : D) :=
       p = RX ∨ p = RWX
     → (∀ x : RegName, is_Some (r !! x))
-    → isCorrectPC (WCap p b e a)
+    → isCorrectPC (WCap asid p b e a)
     → (b <= a)%a ∧ (a < e)%a
     → decodeInstrW w = i
     -> □ ▷ (∀ a0 a1 a2 a3 a4,
@@ -29,17 +29,17 @@ Section fundamental.
           -∗ registers_pointsto (<[PC:=WCap a1 a2 a3 a4]> a0)
           -∗ na_own logrel_nais ⊤
              -∗ □ (fixpoint interp1) (WCap a1 a2 a3 a4) -∗ interp_conf)
-    -∗ (fixpoint interp1) (WCap p b e a)
+    -∗ (fixpoint interp1) (WCap asid p b e a)
     -∗ inv (logN.@a) (∃ w0 : leibnizO Word, a ↦ₐ w0 ∗ P w0)
     -∗ (∀ (r1 : RegName) v, ⌜r1 ≠ PC⌝ → ⌜r !! r1 = Some v⌝ → (fixpoint interp1) v)
     -∗ ▷ □ (∀ w : Word, P w -∗ (fixpoint interp1) w)
-            ∗ (if decide (writeAllowed_in_r_a (<[PC:=WCap p b e a]> r) a) then ▷ □ (∀ w : Word, (fixpoint interp1) w -∗ P w) else emp)
+            ∗ (if decide (writeAllowed_in_r_a (<[PC:=WCap asid p b e a]> r) a) then ▷ □ (∀ w : Word, (fixpoint interp1) w -∗ P w) else emp)
     -∗ na_own logrel_nais ⊤
     -∗ a ↦ₐ w
     -∗ ▷ P w
     -∗ (▷ (∃ w0 : leibnizO Word, a ↦ₐ w0 ∗ P w0) ={⊤ ∖ ↑logN.@a,⊤}=∗ emp)
-    -∗ PC ↦ᵣ WCap p b e a
-    -∗ ([∗ map] k↦y ∈ delete PC (<[PC:=WCap p b e a]> r), k ↦ᵣ y)
+    -∗ PC ↦ᵣ WCap asid p b e a
+    -∗ ([∗ map] k↦y ∈ delete PC (<[PC:=WCap asid p b e a]> r), k ↦ᵣ y)
     -∗
         WP Instr Executable
         @ ⊤ ∖ ↑logN.@a {{ v, |={⊤ ∖ ↑logN.@a,⊤}=> WP Seq (of_val v)

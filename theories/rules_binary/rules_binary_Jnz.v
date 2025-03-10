@@ -15,10 +15,10 @@ Section cap_lang_spec_rules.
   Implicit Types reg : gmap RegName Word.
   Implicit Types ms : gmap PhysAddr Word.
 
-  Lemma step_Jnz Ep K pc_p pc_b pc_e pc_a w dst src regs :
+  Lemma step_Jnz Ep K pc_asid pc_p pc_b pc_e pc_a w dst src regs :
     decodeInstrW w = Jnz dst src ->
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-    regs !! PC = Some (WCap pc_p pc_b pc_e pc_a) →
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
+    regs !! PC = Some (WCap pc_asid pc_p pc_b pc_e pc_a) →
     regs_of (Jnz dst src) ⊆ dom regs →
 
     nclose specN ⊆ Ep →
@@ -65,7 +65,7 @@ Section cap_lang_spec_rules.
       iPureIntro; econstructor; eauto. }
 
     destruct (incrementPC_success_updatePC _ σm _ HX)
-      as (p' & g' & b' & e' & a'' & a_pc' & HPC'' & HuPC & ->).
+      as (asid' & p' & g' & b' & e' & a'' & a_pc' & HPC'' & HuPC & ->).
     eapply updatePC_success_incl with (m':=σm) in HuPC; eauto.
     rewrite HuPC in Hstep. simplify_pair_eq.
     iMod ((regspec_heap_update_inSepM _ _ _ PC) with "Hown Hmap") as "[Hown Hmap]"; eauto.
@@ -76,19 +76,19 @@ Section cap_lang_spec_rules.
   Qed.
 
 
-  Lemma step_jnz_success_next E K r1 r2 pc_p pc_b pc_e pc_a pc_a' w w1 :
+  Lemma step_jnz_success_next E K r1 r2 pc_asid pc_p pc_b pc_e pc_a pc_a' w w1 :
     decodeInstrW w = Jnz r1 r2 →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
     (pc_a + 1)%va = Some pc_a' →
     nclose specN ⊆ E →
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
-             ∗ ▷ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
+             ∗ ▷ PC ↣ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
              ∗ ▷ (TEMP_virt_to_phys pc_a) ↣ₐ w
              ∗ ▷ r1 ↣ᵣ w1
              ∗ ▷ r2 ↣ᵣ WInt 0%Z
     ={E}=∗ ⤇ fill K (Instr NextI)
-         ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a'
+         ∗ PC ↣ᵣ WCap pc_asid pc_p pc_b pc_e pc_a'
          ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
          ∗ r1 ↣ᵣ w1
          ∗ r2 ↣ᵣ WInt 0%Z.
@@ -105,14 +105,14 @@ Section cap_lang_spec_rules.
     { rewrite lookup_insert_ne// lookup_insert_ne// lookup_insert in H4. simplify_eq. }
   Qed.
 
-  Lemma step_jnz_success_jmp E K r1 r2 pc_p pc_b pc_e pc_a w w1 w2 :
+  Lemma step_jnz_success_jmp E K r1 r2 pc_asid pc_p pc_b pc_e pc_a w w1 w2 :
     decodeInstrW w = Jnz r1 r2 →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
     w2 ≠ WInt 0%Z →
     nclose specN ⊆ E →
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
-             ∗ ▷ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
+             ∗ ▷ PC ↣ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
              ∗ ▷ (TEMP_virt_to_phys pc_a) ↣ₐ w
              ∗ ▷ r1 ↣ᵣ w1
              ∗ ▷ r2 ↣ᵣ w2

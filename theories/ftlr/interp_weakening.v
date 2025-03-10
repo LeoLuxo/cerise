@@ -35,8 +35,8 @@ Section fundamental.
       (e' <= e)%a ->
       PermFlowsTo p' p ->
       IH -∗
-      (fixpoint interp1) (WCap p b e a) -∗
-      (fixpoint interp1) (WCap p' b' e' a').
+      (fixpoint interp1) (WCap asid p b e a) -∗
+      (fixpoint interp1) (WCap asid p' b' e' a').
   Proof.
     intros HpnotE Hb He Hp. iIntros "#IH #HA".
     destruct (decide (b' <= e')%a).

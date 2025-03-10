@@ -17,11 +17,11 @@ Section cap_lang_rules.
   Implicit Types reg : gmap RegName Word.
   Implicit Types ms : gmap PhysAddr Word.
 
-  Lemma wp_jmp_success E pc_p pc_b pc_e pc_a w r w' :
+  Lemma wp_jmp_success E pc_asid pc_p pc_b pc_e pc_a w r w' :
     decodeInstrW w = Jmp r →
-     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+     isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
 
-     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
+     {{{ ▷ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
          ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
          ∗ ▷ r ↦ᵣ w' }}}
        Instr Executable @ E
@@ -48,15 +48,15 @@ Section cap_lang_rules.
     iApply "Hφ". by iFrame.
   Qed.
 
-  Lemma wp_jmp_successPC E pc_p pc_b pc_e pc_a w :
+  Lemma wp_jmp_successPC E pc_asid pc_p pc_b pc_e pc_a w :
     decodeInstrW w = Jmp PC →
-     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+     isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
 
-     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
+     {{{ ▷ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
          ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w }}}
        Instr Executable @ E
        {{{ RET NextIV;
-           PC ↦ᵣ updatePcPerm (WCap pc_p pc_b pc_e pc_a)
+           PC ↦ᵣ updatePcPerm (WCap pc_asid pc_p pc_b pc_e pc_a)
            ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w }}}.
   Proof.
     iIntros (Hinstr Hvpc ϕ) "(>HPC & >Hpc_a) Hφ".

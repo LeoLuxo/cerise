@@ -25,8 +25,8 @@ Section fundamental.
           -∗ registers_pointsto (<[PC:=WCap a1 a2 a3 a4]> a0)
           -∗ na_own logrel_nais ⊤
           -∗ □ (fixpoint interp1) (WCap a1 a2 a3 a4) -∗ interp_conf)) -∗
-    (fixpoint interp1) (WCap p b e a) -∗
-    (fixpoint interp1) (WCap p' b e a).
+    (fixpoint interp1) (WCap asid p b e a) -∗
+    (fixpoint interp1) (WCap asid p' b e a).
   Proof.
     intros HpnotE Hp. iIntros "#IH HA".
     iApply (interp_weakening with "IH HA"); eauto; try solve_addr.

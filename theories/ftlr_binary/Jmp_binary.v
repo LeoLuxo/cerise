@@ -32,7 +32,7 @@ Section fundamental.
       iAssert (⌜w = w'⌝)%I as %Heqw.
       { iDestruct "Hread" as "[Hread _]". iSpecialize ("Hread" with "HP"). by iApply interp_eq. }
       destruct r as [r1 r2]. simpl in *.
-      iDestruct (interp_reg_eq r1 r2 (WCap p b e a) with "[]") as %Heq;[iSplit;auto|]. rewrite -!Heq.
+      iDestruct (interp_reg_eq r1 r2 (WCap asid p b e a) with "[]") as %Heq;[iSplit;auto|]. rewrite -!Heq.
 
       iMod (wp_jmp_successPC _ [SeqCtx] with "[$Ha' $HsPC $Hs]") as "(Hs & HsPC & Ha') /=";[rewrite Heqw in Hi|..];eauto.
       { solve_ndisj. }
@@ -64,10 +64,10 @@ Section fundamental.
       iAssert (⌜w = w'⌝)%I as %Heqw.
       { iDestruct "Hread" as "[Hread _]". iSpecialize ("Hread" with "HP"). by iApply interp_eq. }
       destruct r as [r1 r2]. simpl in *.
-      iDestruct (interp_reg_eq r1 r2 (WCap p b e a) with "[]") as %Heq;[iSplit;auto|]. rewrite -!Heq.
+      iDestruct (interp_reg_eq r1 r2 (WCap asid p b e a) with "[]") as %Heq;[iSplit;auto|]. rewrite -!Heq.
       subst w'.
       assert (wdst1 = wdst2) as <-.
-      { assert (HA: <[PC:=WCap p b e a]> r1 !! dst = Some wdst1) by (rewrite lookup_insert_ne; auto).
+      { assert (HA: <[PC:=WCap asid p b e a]> r1 !! dst = Some wdst1) by (rewrite lookup_insert_ne; auto).
         rewrite Heq lookup_insert_ne in HA; auto.
         rewrite Hdst2 in HA. inversion HA; auto. }
 
@@ -97,7 +97,7 @@ Section fundamental.
           [apply lookup_insert|rewrite delete_insert_delete;iFrame|]. simpl.
 
         destruct (perm_eq_dec p0 E).
-        + subst p0. rewrite /interp (fixpoint_interp1_eq (WCap E _ _ _, WCap _ _ _ _)) /=.
+        + subst p0. rewrite /interp (fixpoint_interp1_eq (WCap E _ _ _, WCap _ _ _ _ _)) /=.
           iDestruct "Hinvdst" as (_) "Hinvdst".
           iDestruct ("Hinvdst" $! (<[dst:=_]>r1, <[dst:=_]>r2)) as "Hinvdst'".
           iNext. iMod (do_step_pure _ [] with "[$Hs]") as "Hs /="; auto.
@@ -112,7 +112,7 @@ Section fundamental.
                 iDestruct ("Hreg" $! dst _ _ ltac:(auto) Hdst1 Hdst2) as "Hinvdst2"; auto.
                 + by iDestruct ("Hreg" $! rr _ _ Hne Hv1s Hv2s) as "Hrr". }
             { assert (<[PC:=WCap RX b0 e0 a0]> (<[dst:=WCap E b0 e0 a0]> r1) = (<[PC:=WCap RX b0 e0 a0]> (<[dst:=WCap E b0 e0 a0]> r2))).
-              { transitivity (<[PC:=WCap RX b0 e0 a0]> (<[dst:=WCap E b0 e0 a0]> (<[PC:=WCap p b e a]> r1))).
+              { transitivity (<[PC:=WCap RX b0 e0 a0]> (<[dst:=WCap E b0 e0 a0]> (<[PC:=WCap asid p b e a]> r1))).
                 - rewrite (insert_commute r1 dst); auto. rewrite insert_insert; auto.
                 - rewrite Heq. rewrite (insert_commute r2 dst); auto. rewrite insert_insert; auto. }
               rewrite H0. iFrame. }
@@ -132,8 +132,8 @@ Section fundamental.
           { simpl. destruct p0; eauto. }
           { simpl. assert (<[PC:=match p0 with
                                  | E => WCap RX b0 e0 a0
-                                 | _ => WCap p0 b0 e0 a0
-                                 end]> (<[dst:=WCap p0 b0 e0 a0]> r1) = (<[PC:=WCap match p0 with
+                                 | _ => WCap asid p0 b0 e0 a0
+                                 end]> (<[dst:=WCap asid p0 b0 e0 a0]> r1) = (<[PC:=WCap match p0 with
                                                                                     | E => RX
                                                                                     | _ => p0
                                                                                     end b0 e0 a0]> (<[dst:=match r2 !! dst with
@@ -142,8 +142,8 @@ Section fundamental.
                                                                                                            end]> r2))).
             { transitivity (<[PC:=match p0 with
                                   | E => WCap RX b0 e0 a0
-                                  | _ => WCap p0 b0 e0 a0
-                                  end]> (<[dst:=WCap p0 b0 e0 a0]> (<[PC:=WCap p b e a]> r1))).
+                                  | _ => WCap asid p0 b0 e0 a0
+                                  end]> (<[dst:=WCap asid p0 b0 e0 a0]> (<[PC:=WCap asid p b e a]> r1))).
               - rewrite !(insert_commute _ PC dst); auto.
                 rewrite insert_insert. reflexivity.
               - rewrite Heq. rewrite !(insert_commute _ PC dst); auto.

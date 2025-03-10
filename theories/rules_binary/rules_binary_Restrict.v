@@ -14,10 +14,10 @@ Section cap_lang_spec_rules.
   Implicit Types reg : gmap RegName Word.
   Implicit Types ms : gmap PhysAddr Word.
 
-  Lemma step_Restrict Ep K pc_p pc_b pc_e pc_a w dst src regs :
+  Lemma step_Restrict Ep K pc_asid pc_p pc_b pc_e pc_a w dst src regs :
     decodeInstrW w = Restrict dst src ->
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-    regs !! PC = Some (WCap pc_p pc_b pc_e pc_a) →
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
+    regs !! PC = Some (WCap pc_asid pc_p pc_b pc_e pc_a) →
     regs_of (Restrict dst src) ⊆ dom regs →
 
     nclose specN ⊆ Ep →
@@ -56,13 +56,13 @@ Section cap_lang_spec_rules.
      2: { (* Failure: wdst is not of the right type *)
        unfold is_mutable_range in Hwdst.
        assert (c = Failed ∧ σ2 = (σr, σm)) as (-> & ->).
-       { destruct wdst as [ | [p b e a | ] | ]; try by inversion Hwdst.
+       { destruct wdst as [ | [asid p b e a | ] | ]; try by inversion Hwdst.
          all: try by simplify_pair_eq.
          destruct p; try congruence.
          simplify_pair_eq; auto. }
        iFailStep Restrict_fail_allowed. }
 
-    destruct wdst as [ | [p b e a | p b e a] | ].
+    destruct wdst as [ | [asid p b e a | p b e a] | ].
     1,4: inversion Hwdst.
     (* First, the case where r1v is a capability *)
     + destruct (perm_eq_dec p E); [ subst p |].
@@ -72,10 +72,10 @@ Section cap_lang_spec_rules.
        { destruct p; try congruence; inv Hstep ; iFailStep Restrict_fail_invalid_perm_cap. }
        rewrite /update_reg /= in Hstep.
 
-       destruct (incrementPC (<[ dst := WCap (decodePerm wsrc) b e a ]> regs)) eqn:Hregs';
+       destruct (incrementPC (<[ dst := WCap asid (decodePerm wsrc) b e a ]> regs)) eqn:Hregs';
          pose proof Hregs' as H'regs'; cycle 1.
        {
-         assert (incrementPC (<[ dst := WCap( decodePerm wsrc) b e a ]> σr) = None) as HH.
+         assert (incrementPC (<[ dst := WCap asid (decodePerm wsrc) b e a ]> σr) = None) as HH.
          { eapply incrementPC_overflow_mono; first eapply Hregs'.
              by rewrite lookup_insert_is_Some'; eauto.
                by apply insert_mono; eauto. }
@@ -85,7 +85,7 @@ Section cap_lang_spec_rules.
          iFailStep Restrict_fail_PC_overflow_cap. }
 
        eapply (incrementPC_success_updatePC _ σm) in Hregs'
-         as (p' & g' & b' & e' & a'' & a_pc' & HPC'' & HuPC & ->).
+         as (asid' & p' & g' & b' & e' & a'' & a_pc' & HPC'' & HuPC & ->).
        eapply updatePC_success_incl with (m':=σm) in HuPC. 2: by eapply insert_mono; eauto. rewrite HuPC in Hstep.
        eassert ((c, σ2) = (NextI, _)) as HH.
        { destruct p; cbn in Hstep; eauto. congruence. }
@@ -118,7 +118,7 @@ Section cap_lang_spec_rules.
          iFailStep Restrict_fail_PC_overflow_sr. }
 
        eapply (incrementPC_success_updatePC _ σm) in Hregs'
-         as (p' & g' & b' & e' & a'' & a_pc' & HPC'' & HuPC & ->).
+         as (asid' & p' & g' & b' & e' & a'' & a_pc' & HPC'' & HuPC & ->).
        eapply updatePC_success_incl with (m':=σm) in HuPC. 2: by eapply insert_mono; eauto. rewrite HuPC in Hstep.
        eassert ((c, σ2) = (NextI, _)) as HH.
        { destruct p; cbn in Hstep; eauto. }
@@ -134,22 +134,22 @@ Section cap_lang_spec_rules.
       iModIntro. iPureIntro. econstructor 2; eauto. Unshelve. all: try done.
   Qed.
 
-  Lemma step_restrict_success_z Ep K pc_p pc_b pc_e pc_a pc_a' w r1 p b e a z :
+  Lemma step_restrict_success_z Ep K pc_asid pc_p pc_b pc_e pc_a pc_a' w r1 asid p b e a z :
      decodeInstrW w = Restrict r1 (inl z) →
-     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+     isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
      (pc_a + 1)%va = Some pc_a' →
      PermFlowsTo (decodePerm z) p = true →
      p ≠ E →
      nclose specN ⊆ Ep →
 
      spec_ctx ∗ ⤇ fill K (Instr Executable)
-              ∗ ▷ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
+              ∗ ▷ PC ↣ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
               ∗ ▷ (TEMP_virt_to_phys pc_a) ↣ₐ w
-              ∗ ▷ r1 ↣ᵣ WCap p b e a
+              ∗ ▷ r1 ↣ᵣ WCap asid p b e a
      ={Ep}=∗ ⤇ fill K (Instr NextI)
-         ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a'
+         ∗ PC ↣ᵣ WCap pc_asid pc_p pc_b pc_e pc_a'
          ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
-         ∗ r1 ↣ᵣ WCap (decodePerm z) b e a.
+         ∗ r1 ↣ᵣ WCap asid (decodePerm z) b e a.
   Proof.
     iIntros (Hinstr Hvpc Hpca' Hflows HpE Hnclose) "(Hown & Hj & >HPC & >Hpc_a & >Hr1)".
     iDestruct (map_of_regs_2 with "HPC Hr1") as "[Hmap %]".

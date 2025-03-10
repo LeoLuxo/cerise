@@ -37,7 +37,7 @@ Section fundamental.
     iAssert (⌜w = w'⌝)%I as %Heqw.
     { iDestruct "Hread" as "[Hread _]". iSpecialize ("Hread" with "HP"). by iApply interp_eq. }
     destruct r as [r1 r2]. simpl in *.
-    iDestruct (interp_reg_eq r1 r2 (WCap p b e a) with "[]") as %Heq;[iSplit;auto|]. rewrite -!Heq.
+    iDestruct (interp_reg_eq r1 r2 (WCap asid p b e a) with "[]") as %Heq;[iSplit;auto|]. rewrite -!Heq.
 
     destruct HSpec; cycle 1.
     - (* In case of failure, we do not necessarily get a contradiction, but the proof is trivial *)

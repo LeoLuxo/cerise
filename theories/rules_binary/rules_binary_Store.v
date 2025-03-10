@@ -22,11 +22,11 @@ Section cap_lang_spec_rules.
     iExists (FailedV),_,_; iFrame;iModIntro;iFailCore fail_type.
 
   Lemma step_store Ep K
-     pc_p pc_b pc_e pc_a
+     pc_asid pc_p pc_b pc_e pc_a
      r1 (r2 : Z + RegName) w mem regs :
    decodeInstrW w = Store r1 r2 →
-   isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-   regs !! PC = Some (WCap pc_p pc_b pc_e pc_a) →
+   isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
+   regs !! PC = Some (WCap pc_asid pc_p pc_b pc_e pc_a) →
    regs_of (Store r1 r2) ⊆ dom regs →
    mem !! (TEMP_virt_to_phys pc_a) = Some w →
    allow_store_map_or_true r1 regs mem →
@@ -77,7 +77,7 @@ Section cap_lang_spec_rules.
        iExists (FailedV),_,_; iFrame. iModIntro.
        iPureIntro. econstructor; eauto. econstructor; eauto.
      }
-     destruct r1v as [ | [p b e a | ] | ]; try inversion Hr1v. clear Hr1v.
+     destruct r1v as [ | [asid p b e a | ] | ]; try inversion Hr1v. clear Hr1v.
 
      destruct (writeAllowed p && withinBoundsVirt b e a) eqn:HWA.
      2 : { (* Failure: r2 is either not within bounds or doesnt allow reading *)
@@ -127,25 +127,24 @@ Section cap_lang_spec_rules.
       * unfold incrementPC. rewrite a_pc1 HPC''. auto.
   Qed. *)
 
-  Lemma step_store_success_reg E K pc_p pc_b pc_e pc_a pc_a' w dst src w'
-         p b e a w'' :
+  Lemma step_store_success_reg E K pc_asid pc_p pc_b pc_e pc_a pc_a' w dst src w' asid p b e a w'' :
       decodeInstrW w = Store dst (inr src) →
-     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+     isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
      (pc_a + 1)%va = Some pc_a' →
      writeAllowed p = true ∧ withinBoundsVirt b e a = true →
      nclose specN ⊆ E →
 
      spec_ctx ∗ ⤇ fill K (Instr Executable)
-              ∗  ▷ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
+              ∗  ▷ PC ↣ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
               ∗ ▷ (TEMP_virt_to_phys pc_a) ↣ₐ w
               ∗ ▷ src ↣ᵣ w''
-              ∗ ▷ dst ↣ᵣ WCap p b e a
+              ∗ ▷ dst ↣ᵣ WCap asid p b e a
               ∗ ▷ (TEMP_virt_to_phys a) ↣ₐ w'
      ={E}=∗ ⤇ fill K (Instr NextI)
-         ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a'
+         ∗ PC ↣ᵣ WCap pc_asid pc_p pc_b pc_e pc_a'
          ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
          ∗ src ↣ᵣ w''
-         ∗ dst ↣ᵣ WCap p b e a
+         ∗ dst ↣ᵣ WCap asid p b e a
          ∗ (TEMP_virt_to_phys a) ↣ₐ w''.
   Proof. Admitted.
     (* iIntros (Hinstr Hvpc Hpca' [Hwa Hwb] Hnclose)
@@ -174,23 +173,22 @@ Section cap_lang_spec_rules.
      }
     Qed. *)
 
-  Lemma step_store_success_z E K pc_p pc_b pc_e pc_a pc_a' w dst z w'
-         p b e a :
+  Lemma step_store_success_z E K pc_asid pc_p pc_b pc_e pc_a pc_a' w dst z w' asid p b e a :
      decodeInstrW w = Store dst (inl z) →
-     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+     isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
      (pc_a + 1)%va = Some pc_a' →
      writeAllowed p = true ∧ withinBoundsVirt b e a = true →
      nclose specN ⊆ E →
 
      spec_ctx ∗ ⤇ fill K (Instr Executable)
-              ∗ ▷ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
+              ∗ ▷ PC ↣ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
               ∗ ▷ (TEMP_virt_to_phys pc_a) ↣ₐ w
-              ∗ ▷ dst ↣ᵣ WCap p b e a
+              ∗ ▷ dst ↣ᵣ WCap asid p b e a
               ∗ ▷ (TEMP_virt_to_phys a) ↣ₐ w'
      ={E}=∗ ⤇ fill K (Instr NextI)
-         ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a'
+         ∗ PC ↣ᵣ WCap pc_asid pc_p pc_b pc_e pc_a'
          ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
-         ∗ dst ↣ᵣ WCap p b e a
+         ∗ dst ↣ᵣ WCap asid p b e a
          ∗ (TEMP_virt_to_phys a) ↣ₐ WInt z.
   Proof. Admitted.
     (* iIntros (Hinstr Hvpc Hpca' [Hwa Hwb] Hnclose)

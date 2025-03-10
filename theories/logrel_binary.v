@@ -55,7 +55,7 @@ Section logrel.
              ∗ spec_registers_pointsto (<[PC:=w.2]> r.2)
              ∗ na_own logrel_nais ⊤
              ∗ ⤇ Seq (Instr Executable) -∗
-             ⌜match w.1,w.2 with WCap _ _ _ _,WCap _ _ _ _ => True | _,_ => False end⌝ ∧ interp_conf))%I.
+             ⌜match w.1,w.2 with WCap _ _ _ _ _,WCap _ _ _ _ _ => True | _,_ => False end⌝ ∧ interp_conf))%I.
   Solve All Obligations with solve_proper.
 
   (* condition definitions *)
@@ -206,7 +206,7 @@ Section logrel.
   Proof.
     intros n x y Hdistn [w w0].
     rewrite /interp1.
-    destruct w as [ | [p b e a | p b e a] | ];
+    destruct w as [ | [asid p b e a | p b e a] | ];
     destruct w0 as [ | [p0 b0 e0 a0 | p0 b0 e0 a0] | ];
       [auto..| by cbn].
     destruct p,p0; try auto.
@@ -234,7 +234,7 @@ Section logrel.
   Lemma read_allowed_inv (a'' a b e a' b' e' : Addr) p p' :
     (b ≤ a'' ∧ a'' < e)%Z →
     readAllowed p →
-    ⊢ (interp (WCap p b e a,WCap p' b' e' a') →
+    ⊢ (interp (WCap asid p b e a,WCap asid p' b' e' a') →
      (∃ P, inv (logN .@ a'') (interp_ref_inv a'' P) ∗ read_cond P interp ∗ if writeAllowed p then write_cond P interp else emp))%I.
   Proof.
     iIntros (Hin Ra) "Hinterp".
@@ -247,7 +247,7 @@ Section logrel.
   Lemma write_allowed_inv (a'' a b e a' b' e' : Addr) p p' :
     (b ≤ a'' ∧ a'' < e)%Z →
     writeAllowed p →
-    ⊢ (interp (WCap p b e a, WCap p' b' e' a') →
+    ⊢ (interp (WCap asid p b e a, WCap asid p' b' e' a') →
      inv (logN .@ a'') (interp_ref_inv a'' interp))%I.
   Proof.
     iIntros (Hin Wa) "Hinterp".
@@ -278,8 +278,8 @@ Section logrel.
     (b ≤ a'' ∧ a'' < e)%Z →
     readAllowed p →
     ⊢ (interp_registers r -∗
-    interp (WCap p b e a,WCap p' b' e' a') -∗
-     (∃ P, inv (logN .@ a'') (interp_ref_inv a'' P) ∗ read_cond P interp ∗ if decide (writeAllowed_in_r_a (<[PC:=WCap p b e a]> r.1) a'') then write_cond P interp else emp))%I.
+    interp (WCap asid p b e a,WCap asid p' b' e' a') -∗
+     (∃ P, inv (logN .@ a'') (interp_ref_inv a'' P) ∗ read_cond P interp ∗ if decide (writeAllowed_in_r_a (<[PC:=WCap asid p b e a]> r.1) a'') then write_cond P interp else emp))%I.
   Proof.
     iIntros (Hin Ra) "#Hregs #Hinterp".
     rewrite /interp_registers /interp_reg /=.

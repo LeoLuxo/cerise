@@ -28,7 +28,7 @@ Class MachineParameters := {
     decodeWordType : Z -> Word;
     encodeWordType_correct :
     forall w w', match w,w' with
-            | WCap _ _ _ _, WCap _ _ _ _ => encodeWordType w = encodeWordType w'
+            | WCap _ _ _ _ _, WCap _ _ _ _ _ => encodeWordType w = encodeWordType w'
             | WSealRange _ _ _ _, WSealRange _ _ _ _ => encodeWordType w = encodeWordType w'
             | WSealed _ _, WSealed _ _ => encodeWordType w = encodeWordType w'
             | WInt _, WInt _ => encodeWordType w = encodeWordType w'
@@ -59,9 +59,9 @@ Definition encodeInstrsW `{MachineParameters} : list instr → list Word :=
   map encodeInstrW.
 
 Section word_type_encoding.
-  Definition wt_cap := WCap O 0%va 0%va 0%va.
+  Definition wt_cap := WCap 0%asid O 0%va 0%va 0%va.
   Definition wt_sealrange := WSealRange (false, false) 0%ot 0%ot 0%ot.
-  Definition wt_sealed := WSealed 0%ot (SCap O 0%va 0%va 0%va).
+  Definition wt_sealed := WSealed 0%ot (SCap 0%asid O 0%va 0%va 0%va).
   Definition wt_int := WInt 0.
 End word_type_encoding.
 
@@ -76,8 +76,8 @@ Ltac solve_encodeWordType :=
 
 Ltac simpl_encodeWordType :=
   match goal with
-  | H: _ |- context G [encodeWordType (WCap ?p ?b ?e ?a)] =>
-      rewrite (_: encodeWordType (WCap p b e a) = encodeWordType wt_cap) ; last solve_encodeWordType
+  | H: _ |- context G [encodeWordType (WCap ?ai ?p ?b ?e ?a)] =>
+      rewrite (_: encodeWordType (WCap ai p b e a) = encodeWordType wt_cap) ; last solve_encodeWordType
 
   | H: _ |- context G [encodeWordType (WSealRange ?p ?b ?e ?a)] =>
       rewrite (_: encodeWordType (WSealRange p b e a) = encodeWordType wt_sealrange) ; last solve_encodeWordType
@@ -89,8 +89,8 @@ Ltac simpl_encodeWordType :=
       rewrite (_: encodeWordType (WSealed o s) = encodeWordType wt_sealed) ; last solve_encodeWordType
   end.
 
-Lemma encodeWordType_correct_cap `{MachineParameters} : forall p b e a p' b' e' a',
-  encodeWordType (WCap p b e a) = encodeWordType (WCap p' b' e' a').
+Lemma encodeWordType_correct_cap `{MachineParameters} : forall asid p b e a p' b' e' a',
+  encodeWordType (WCap asid p b e a) = encodeWordType (WCap asid p' b' e' a').
   intros; solve_encodeWordType.
 Qed.
 

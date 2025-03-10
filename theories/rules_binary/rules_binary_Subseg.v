@@ -15,10 +15,10 @@ Section cap_lang_spec_rules.
   Implicit Types reg : gmap RegName Word.
   Implicit Types ms : gmap PhysAddr Word.
 
-  Lemma step_Subseg Ep K pc_p pc_b pc_e pc_a w dst src1 src2 regs :
+  Lemma step_Subseg Ep K pc_asid pc_p pc_b pc_e pc_a w dst src1 src2 regs :
     decodeInstrW w = Subseg dst src1 src2 ->
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-    regs !! PC = Some (WCap pc_p pc_b pc_e pc_a) →
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
+    regs !! PC = Some (WCap pc_asid pc_p pc_b pc_e pc_a) →
     regs_of (Subseg dst src1 src2) ⊆ dom regs →
 
     nclose specN ⊆ Ep →
@@ -46,14 +46,14 @@ Section cap_lang_spec_rules.
      2: { (* Failure: wdst is not of the right type *)
        unfold is_mutable_range in Hwdst.
        assert (c = Failed ∧ σ2 = (σr, σm)) as (-> & ->).
-       { destruct wdst as [ | [p b e a | ] | ]; try by inversion Hwdst.
+       { destruct wdst as [ | [asid p b e a | ] | ]; try by inversion Hwdst.
          all: try by simplify_pair_eq.
          destruct p; try congruence.
          repeat destruct (addr_of_argument σr _); cbn in Hstep; simplify_pair_eq; auto. }
        iFailStep Subseg_fail_allowed. }
 
     (* Now the proof splits depending on the type of value in wdst *)
-    destruct wdst as [ | [p b e a | p b e a] | ].
+    destruct wdst as [ | [asid p b e a | p b e a] | ].
     1,4: inversion Hwdst.
 
     (* First, the case where wdst is a capability *)
@@ -115,9 +115,9 @@ Section cap_lang_spec_rules.
       destruct (isWithinVirt a1 a2 b e) eqn:Hiw; cycle 1.
       { destruct p; try congruence; inv Hstep ; iFailStep Subseg_fail_not_iswithin_cap. }
 
-      destruct (incrementPC (<[ dst := (WCap p a1 a2 a) ]> regs)) eqn:Hregs';
+      destruct (incrementPC (<[ dst := (WCap asid p a1 a2 a) ]> regs)) eqn:Hregs';
         pose proof Hregs' as H'regs'; cycle 1.
-      { assert (incrementPC (<[ dst := (WCap p a1 a2 a) ]> σr) = None) as HH.
+      { assert (incrementPC (<[ dst := (WCap asid p a1 a2 a) ]> σr) = None) as HH.
         { eapply incrementPC_overflow_mono; first eapply Hregs'.
             by rewrite lookup_insert_is_Some'; eauto.
               by apply insert_mono; eauto. }
@@ -127,13 +127,13 @@ Section cap_lang_spec_rules.
         iFailStep Subseg_fail_incrPC_cap. }
 
       eapply (incrementPC_success_updatePC _ σm) in Hregs'
-        as (p' & g' & b' & e' & a'' & a_pc' & HPC'' & HuPC & ->).
+        as (asid' & p' & g' & b' & e' & a'' & a_pc' & HPC'' & HuPC & ->).
       eapply updatePC_success_incl with (m':=σm) in HuPC. 2: by eapply insert_mono; eauto. rewrite HuPC in Hstep.
       eassert ((c, σ2) = (NextI, _)) as HH.
       { destruct p; cbn in Hstep; eauto. congruence. }
       simplify_pair_eq.
       iMod ((regspec_heap_update_inSepM _ _ _ dst) with "Hown Hmap") as "[Hown Hmap]"; eauto.
-      iMod ((regspec_heap_update_inSepM _ _ _ PC (WCap p' g' b' a'')) with "Hown Hmap") as "[Hown Hmap]"; eauto.
+      iMod ((regspec_heap_update_inSepM _ _ _ PC (WCap asid' p' g' b' a'')) with "Hown Hmap") as "[Hown Hmap]"; eauto.
       iMod (exprspec_pointsto_update _ _ (fill K (Instr NextI)) with "Hown Hj") as "[Hown Hj]".
       iExists NextIV,_. iFrame.
       iMod ("Hclose" with "[Hown]") as "_".
@@ -199,13 +199,13 @@ Section cap_lang_spec_rules.
         iFailStep Subseg_fail_incrPC_sr. }
 
       eapply (incrementPC_success_updatePC _ σm) in Hregs'
-        as (p' & g' & b' & e' & a'' & a_pc' & HPC'' & HuPC & ->).
+        as (asid' & p' & g' & b' & e' & a'' & a_pc' & HPC'' & HuPC & ->).
       eapply updatePC_success_incl with (m':=σm) in HuPC. 2: by eapply insert_mono; eauto. rewrite HuPC in Hstep.
       eassert ((c, σ2) = (NextI, _)) as HH.
       { destruct p; cbn in Hstep; eauto. }
       simplify_pair_eq.
       iMod ((regspec_heap_update_inSepM _ _ _ dst) with "Hown Hmap") as "[Hown Hmap]"; eauto.
-      iMod ((regspec_heap_update_inSepM _ _ _ PC (WCap p' g' b' a'')) with "Hown Hmap") as "[Hown Hmap]"; eauto.
+      iMod ((regspec_heap_update_inSepM _ _ _ PC (WCap asid' p' g' b' a'')) with "Hown Hmap") as "[Hown Hmap]"; eauto.
       iMod (exprspec_pointsto_update _ _ (fill K (Instr NextI)) with "Hown Hj") as "[Hown Hj]".
       iExists NextIV,_. iFrame.
       iMod ("Hclose" with "[Hown]") as "_".
@@ -215,9 +215,9 @@ Section cap_lang_spec_rules.
       iModIntro. iPureIntro. econstructor 2; eauto.
   Qed.
 
-  Lemma step_subseg_success E K pc_p pc_b pc_e pc_a w dst r1 r2 p b e a n1 n2 a1 a2 pc_a' :
+  Lemma step_subseg_success E K pc_asid pc_p pc_b pc_e pc_a w dst r1 r2 asid p b e a n1 n2 a1 a2 pc_a' :
     decodeInstrW w = Subseg dst (inr r1) (inr r2) →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
     z_to_virt_addr n1 = Some a1 ∧ z_to_virt_addr n2 = Some a2 →
     p ≠ machine_base.E →
     isWithinVirt a1 a2 b e = true →
@@ -225,17 +225,17 @@ Section cap_lang_spec_rules.
     nclose specN ⊆ E →
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
-             ∗ ▷ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
+             ∗ ▷ PC ↣ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
              ∗ ▷ (TEMP_virt_to_phys pc_a) ↣ₐ w
-             ∗ ▷ dst ↣ᵣ WCap p b e a
+             ∗ ▷ dst ↣ᵣ WCap asid p b e a
              ∗ ▷ r1 ↣ᵣ WInt n1
              ∗ ▷ r2 ↣ᵣ WInt n2
     ={E}=∗ ⤇ fill K (Instr NextI)
-        ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a'
+        ∗ PC ↣ᵣ WCap pc_asid pc_p pc_b pc_e pc_a'
         ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
         ∗ r1 ↣ᵣ WInt n1
         ∗ r2 ↣ᵣ WInt n2
-        ∗ dst ↣ᵣ WCap p a1 a2 a.
+        ∗ dst ↣ᵣ WCap asid p a1 a2 a.
   Proof.
     iIntros (Hinstr Hvpc [Hn1 Hn2] Hpne Hwb Hpc_a' Hnclose) "(Hown & Hj & >HPC & >Hpc_a & >Hdst & >Hr1 & >Hr2)".
     iDestruct (map_of_regs_4 with "HPC Hr1 Hr2 Hdst") as "[Hmap (%&%&%&%&%&%)]".

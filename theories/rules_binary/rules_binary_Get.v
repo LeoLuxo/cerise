@@ -15,12 +15,12 @@ Section cap_lang_spec_rules.
   Implicit Types reg : gmap RegName Word.
   Implicit Types ms : gmap PhysAddr Word.
 
-  Lemma step_Get Ep K pc_p pc_b pc_e pc_a w get_i dst src regs :
+  Lemma step_Get Ep K pc_asid pc_p pc_b pc_e pc_a w get_i dst src regs :
     decodeInstrW w = get_i →
     is_Get get_i dst src →
 
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-    regs !! PC = Some (WCap pc_p pc_b pc_e pc_a) →
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
+    regs !! PC = Some (WCap pc_asid pc_p pc_b pc_e pc_a) →
     regs_of get_i ⊆ dom regs →
 
     nclose specN ⊆ Ep →
@@ -73,7 +73,7 @@ Section cap_lang_spec_rules.
     (* Success *)
 
     eapply (incrementPC_success_updatePC _ σm) in Hregs'
-        as (p' & g' & b' & e' & a'' & a_pc' & HPC'' & HuPC & ->).
+        as (asid' & p' & g' & b' & e' & a'' & a_pc' & HPC'' & HuPC & ->).
     eapply updatePC_success_incl with (m':=σm) in HuPC. 2: by eapply insert_mono; eauto. rewrite HuPC in Hstep.
 
     simplify_pair_eq.
@@ -87,21 +87,21 @@ Section cap_lang_spec_rules.
     iModIntro. iPureIntro. econstructor; eauto.
   Qed.
 
-  Lemma step_Get_success E K get_i dst src pc_p pc_b pc_e pc_a w wdst wsrc z pc_a' :
+  Lemma step_Get_success E K get_i dst src pc_asid pc_p pc_b pc_e pc_a w wdst wsrc z pc_a' :
     decodeInstrW w = get_i →
     is_Get get_i dst src →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
     (pc_a + 1)%va = Some pc_a' ->
     denote get_i wsrc = Some z →
     nclose specN ⊆ E →
 
     spec_ctx ∗ ⤇ fill K (Instr Executable)
-             ∗ ▷ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a
+             ∗ ▷ PC ↣ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
              ∗ ▷ (TEMP_virt_to_phys pc_a) ↣ₐ w
              ∗ ▷ src ↣ᵣ wsrc
              ∗ ▷ dst ↣ᵣ wdst
     ={E}=∗ ⤇ fill K (Instr NextI)
-        ∗ PC ↣ᵣ WCap pc_p pc_b pc_e pc_a'
+        ∗ PC ↣ᵣ WCap pc_asid pc_p pc_b pc_e pc_a'
         ∗ (TEMP_virt_to_phys pc_a) ↣ₐ w
         ∗ src ↣ᵣ wsrc
         ∗ dst ↣ᵣ WInt z.

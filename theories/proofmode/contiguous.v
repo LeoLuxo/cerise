@@ -291,12 +291,12 @@ Section Contiguous.
 End Contiguous.
 
 Definition isCorrectPC_range p b e a0 an :=
-  ∀ ai, (a0 <= ai)%va ∧ (ai < an)%va → isCorrectPC (WCap p b e ai).
+  ∀ ai, (a0 <= ai)%va ∧ (ai < an)%va → isCorrectPC (WCap asid p b e ai).
 
 Lemma isCorrectPC_inrange p b (e a0 an a: VirtAddr) :
   isCorrectPC_range p b e a0 an →
   (a0 <= a < an)%va →
-  isCorrectPC (WCap p b e a).
+  isCorrectPC (WCap asid p b e a).
 Proof.
   unfold isCorrectPC_range. move=> /(_ a) HH ?. apply HH. eauto.
 Qed.
@@ -305,7 +305,7 @@ Lemma isCorrectPC_contiguous_range p b e a0 an a l :
   isCorrectPC_range p b e a0 an →
   contiguous_between l (TEMP_virt_to_phys a0) (TEMP_virt_to_phys an) →
   (TEMP_virt_to_phys a) ∈ l →
-  isCorrectPC (WCap p b e a).
+  isCorrectPC (WCap asid p b e a).
 Proof. Admitted.
   (* intros Hr Hc Hin.
   eapply isCorrectPC_inrange; eauto.
@@ -318,7 +318,7 @@ Lemma isCorrectPC_range_perm p b e a0 an :
   p = RX ∨ p = RWX.
 Proof.
   intros Hr H0n.
-  assert (isCorrectPC (WCap p b e a0)) as HH by (apply Hr; solve_addr).
+  assert (isCorrectPC (WCap asid p b e a0)) as HH by (apply Hr; solve_addr).
   inversion HH; auto.
 Qed.
 

@@ -21,7 +21,7 @@ Section cap_lang_rules.
   (* Generalized denote function, since multiple cases result in similar success *)
   Definition denote (i: instr) (w : Word): option Z :=
     match w with
-    | WCap p b e a =>
+    | WCap asid p b e a =>
         match i with
         | GetP _ _ => Some (encodePerm p)
         | GetB _ _ => Some ((z_of_virt_addr b))
@@ -74,17 +74,17 @@ Section cap_lang_rules.
   Qed.
 
   (* Simpler definition, easier to use when proving wp-rules *)
-  Definition denote_cap (i: instr) (p : Perm) (b e a : VirtAddr): Z :=
+  Definition denote_cap (i: instr) (asid : Asid) (p : Perm) (b e a : VirtAddr): Z :=
       match i with
       | GetP _ _ => (encodePerm p)
       | GetB _ _ => (z_of_virt_addr b)
       | GetE _ _ => (z_of_virt_addr e)
       | GetA _ _ => (z_of_virt_addr a)
       | GetOType _ _ => (-1)%Z
-      | GetWType _ _ => (encodeWordType (WCap p b e a))
+      | GetWType _ _ => (encodeWordType (WCap asid p b e a))
       | _ => 0%Z
       end.
-  Lemma denote_cap_denote i p b e a z src dst: is_Get i src dst → denote_cap i p b e a = z → denote i (WCap p b e a) = Some z.
+  Lemma denote_cap_denote i asid p b e a z src dst: is_Get i src dst → denote_cap i asid p b e a = z → denote i (WCap asid p b e a) = Some z.
   Proof. unfold denote_cap, denote, is_Get. intros [-> | [-> | [-> | [-> | [-> |  ->]]]]] ->; done. Qed.
 
   Definition denote_seal (i: instr) (p : SealPerms) (b e a : OType): Z :=
@@ -122,12 +122,12 @@ Section cap_lang_rules.
         Get_failure i regs dst src →
         Get_spec i regs dst src regs' FailedV.
 
-  Lemma wp_Get Ep pc_p pc_b pc_e pc_a w get_i dst src regs :
+  Lemma wp_Get Ep pc_asid pc_p pc_b pc_e pc_a w get_i dst src regs :
     decodeInstrW w = get_i →
     is_Get get_i dst src →
 
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-    regs !! PC = Some (WCap pc_p pc_b pc_e pc_a) →
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
+    regs !! PC = Some (WCap pc_asid pc_p pc_b pc_e pc_a) →
     regs_of get_i ⊆ dom regs →
     {{{ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w ∗
         ▷ [∗ map] k↦y ∈ regs, k ↦ᵣ y }}}
@@ -184,9 +184,8 @@ Section cap_lang_rules.
       iFailWP "Hφ" Get_fail_overflow_PC. }
 
     (* Success *)
-
     eapply (incrementPC_success_updatePC _ m) in Hregs'
-        as (p' & g' & b' & e' & a'' & a_pc' & HPC'' & HuPC & ->).
+        as (asid' & p' & g' & b' & e' & a'' & a_pc' & HPC'' & HuPC & ->).
     eapply updatePC_success_incl with (m':=m) in HuPC. 2: by eapply insert_mono; eauto. rewrite HuPC in Hstep.
     simplify_pair_eq. iFrame.
     iMod ((gen_heap_update_inSepM _ _ dst) with "Hr Hmap") as "[Hr Hmap]"; eauto.
@@ -195,19 +194,19 @@ Section cap_lang_rules.
   Qed.
 
   (* Note that other cases than WCap in the PC are irrelevant, as that will result in having an incorrect PC *)
-  Lemma wp_Get_PC_success E get_i dst pc_p pc_b pc_e pc_a w wdst pc_a' z :
+  Lemma wp_Get_PC_success E get_i dst pc_asid pc_p pc_b pc_e pc_a w wdst pc_a' z :
     decodeInstrW w = get_i →
     is_Get get_i dst PC →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
     (pc_a + 1)%va = Some pc_a' ->
-    denote get_i (WCap pc_p pc_b pc_e pc_a) = Some z →
+    denote get_i (WCap pc_asid pc_p pc_b pc_e pc_a) = Some z →
 
-    {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
+    {{{ ▷ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
         ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ dst ↦ᵣ wdst }}}
       Instr Executable @ E
       {{{ RET NextIV;
-          PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
+          PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a'
           ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ dst ↦ᵣ WInt z }}}.
   Proof.
@@ -226,19 +225,19 @@ Section cap_lang_rules.
       destruct Hfail; try incrementPC_inv; simplify_map_eq; eauto. congruence. }
   Qed.
 
-  Lemma wp_Get_same_success E get_i r pc_p pc_b pc_e pc_a w wr pc_a' z:
+  Lemma wp_Get_same_success E get_i r pc_asid pc_p pc_b pc_e pc_a w wr pc_a' z:
     decodeInstrW w = get_i →
     is_Get get_i r r →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
     (pc_a + 1)%va = Some pc_a' ->
     denote get_i wr = Some z →
 
-    {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
+    {{{ ▷ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
         ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ r ↦ᵣ wr }}}
       Instr Executable @ E
       {{{ RET NextIV;
-          PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
+          PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a'
           ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ r ↦ᵣ WInt z }}}.
   Proof.
@@ -257,20 +256,20 @@ Section cap_lang_rules.
       destruct Hfail; try incrementPC_inv; simplify_map_eq; eauto. congruence. }
   Qed.
 
-  Lemma wp_Get_success E get_i dst src pc_p pc_b pc_e pc_a w wsrc wdst pc_a' z :
+  Lemma wp_Get_success E get_i dst src pc_asid pc_p pc_b pc_e pc_a w wsrc wdst pc_a' z :
     decodeInstrW w = get_i →
     is_Get get_i dst src →
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
     (pc_a + 1)%va = Some pc_a' ->
     denote get_i wsrc = Some z →
 
-    {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
+    {{{ ▷ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
         ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
         ∗ ▷ src ↦ᵣ wsrc
         ∗ ▷ dst ↦ᵣ wdst }}}
       Instr Executable @ E
       {{{ RET NextIV;
-          PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
+          PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a'
           ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
           ∗ src ↦ᵣ wsrc
           ∗ dst ↦ᵣ WInt z }}}.
@@ -290,14 +289,14 @@ Section cap_lang_rules.
       destruct Hfail; try incrementPC_inv; simplify_map_eq; eauto. congruence. }
   Qed.
 
-  Lemma wp_Get_fail E get_i dst src pc_p pc_b pc_e pc_a w zsrc wdst :
+  Lemma wp_Get_fail E get_i dst src pc_asid pc_p pc_b pc_e pc_a w zsrc wdst :
     decodeInstrW w = get_i →
     is_Get get_i dst src →
     (forall dst' src', get_i <> GetOType dst' src') ->
     (forall dst' src', get_i <> GetWType dst' src') ->
-    isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+    isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
 
-    {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
+    {{{ ▷ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
       ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
       ∗ ▷ dst ↦ᵣ wdst
       ∗ ▷ src ↦ᵣ WInt zsrc }}}

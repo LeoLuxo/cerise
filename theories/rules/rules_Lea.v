@@ -24,16 +24,16 @@ Section cap_lang_rules.
      regs !! r1 = Some w ->
      is_mutable_range w = false →
      Lea_failure regs r1 rv
-  | Lea_fail_overflow_cap : forall p b e a z,
-     regs !! r1 = Some (WCap p b e a) ->
+  | Lea_fail_overflow_cap : forall asid p b e a z,
+     regs !! r1 = Some (WCap asid p b e a) ->
      z_of_argument regs rv = Some z ->
      (a + z)%va = None ->
      Lea_failure regs r1 rv
-  | Lea_fail_overflow_PC_cap : forall p b e a z a',
-     regs !! r1 = Some (WCap p b e a) ->
+  | Lea_fail_overflow_PC_cap : forall asid p b e a z a',
+     regs !! r1 = Some (WCap asid p b e a) ->
      z_of_argument regs rv = Some z ->
      (a + z)%va = Some a' ->
-     incrementPC (<[ r1 := WCap p b e a' ]> regs) = None ->
+     incrementPC (<[ r1 := WCap asid p b e a' ]> regs) = None ->
      Lea_failure regs r1 rv
   | Lea_fail_overflow_sr : forall p b e a z,
      regs !! r1 = Some (WSealRange p b e a) ->
@@ -52,13 +52,13 @@ Section cap_lang_rules.
     (regs: Reg) (r1: RegName) (rv: Z + RegName)
     (regs': Reg) : cap_lang.val → Prop
   :=
-  | Lea_spec_success_cap: forall p b e a z a',
-    regs !! r1 = Some (WCap p b e a) ->
+  | Lea_spec_success_cap: forall asid p b e a z a',
+    regs !! r1 = Some (WCap asid p b e a) ->
     p ≠ E ->
     z_of_argument regs rv = Some z ->
     (a + z)%va = Some a' ->
     incrementPC
-      (<[ r1 := WCap p b e a' ]> regs) = Some regs' ->
+      (<[ r1 := WCap asid p b e a' ]> regs) = Some regs' ->
     Lea_spec regs r1 rv regs' NextIV
   | Lea_spec_success_sr: forall p b e a z a',
     regs !! r1 = Some (WSealRange p b e a) ->
@@ -71,10 +71,10 @@ Section cap_lang_rules.
     Lea_failure regs r1 rv ->
     Lea_spec regs r1 rv regs' FailedV.
 
-   Lemma wp_lea Ep pc_p pc_b pc_e pc_a r1 w arg (regs: Reg) :
+   Lemma wp_lea Ep pc_asid pc_p pc_b pc_e pc_a r1 w arg (regs: Reg) :
      decodeInstrW w = Lea r1 arg →
-     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
-     regs !! PC = Some (WCap pc_p pc_b pc_e pc_a) →
+     isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
+     regs !! PC = Some (WCap pc_asid pc_p pc_b pc_e pc_a) →
      regs_of (Lea r1 arg) ⊆ dom regs →
      {{{ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w ∗
          ▷ [∗ map] k↦y ∈ regs, k ↦ᵣ y }}}
@@ -119,14 +119,14 @@ Section cap_lang_rules.
      2: { (* Failure: r1v is not of the right type *)
        unfold is_mutable_range in Hr1v.
        assert (c = Failed ∧ σ2 = (r, m)) as (-> & ->).
-       { destruct r1v as [ | [p b e a | ] | ]; try by inversion Hr1v.
+       { destruct r1v as [ | [asid p b e a | ] | ]; try by inversion Hr1v.
          all: try by simplify_pair_eq.
          destruct p; try congruence.
          simplify_pair_eq; auto. }
        iFailWP "Hφ" Lea_fail_allowed. }
 
      (* Now the proof splits depending on the type of value in r1v *)
-     destruct r1v as [ | [p b e a | p b e a] | ].
+     destruct r1v as [ | [asid p b e a | p b e a] | ].
      1,4: inversion Hr1v.
 
      (* First, the case where r1v is a capability *)
@@ -140,10 +140,10 @@ Section cap_lang_rules.
          iFailWP "Hφ" Lea_fail_overflow_cap. }
 
        rewrite /update_reg /= in Hstep.
-       destruct (incrementPC (<[ r1 := WCap p b e a' ]> regs)) as [ regs' |] eqn:Hregs';
+       destruct (incrementPC (<[ r1 := WCap asid p b e a' ]> regs)) as [ regs' |] eqn:Hregs';
          pose proof Hregs' as Hregs'2; cycle 1.
        { (* Failure: incrementing PC overflows *)
-         assert (incrementPC (<[ r1 := WCap p b e a' ]> r) = None) as HH.
+         assert (incrementPC (<[ r1 := WCap asid p b e a' ]> r) = None) as HH.
          { eapply incrementPC_overflow_mono; first eapply Hregs'.
              by rewrite lookup_insert_is_Some'; eauto.
                by apply insert_mono; eauto. }
@@ -154,7 +154,7 @@ Section cap_lang_rules.
 
        (* Success *)
        eapply (incrementPC_success_updatePC _ m) in Hregs'
-         as (p' & g' & b' & e' & a'' & a_pc' & HPC'' & HuPC & ->).
+         as (asid' & p' & g' & b' & e' & a'' & a_pc' & HPC'' & HuPC & ->).
        eapply updatePC_success_incl in HuPC. 2: by eapply insert_mono; eauto.
        rewrite HuPC in Hstep; clear HuPC.
        eassert ((c, σ2) = (NextI, _)) as HH.
@@ -188,7 +188,7 @@ Section cap_lang_rules.
 
        (* Success *)
        eapply (incrementPC_success_updatePC _ m) in Hregs'
-         as (p' & g' & b' & e' & a'' & a_pc' & HPC'' & HuPC & ->).
+         as (asid' & p' & g' & b' & e' & a'' & a_pc' & HPC'' & HuPC & ->).
        eapply updatePC_success_incl in HuPC. 2: by eapply insert_mono; eauto.
        rewrite HuPC in Hstep; clear HuPC.
        eassert ((c, σ2) = (NextI, _)) as HH.
@@ -203,19 +203,19 @@ Section cap_lang_rules.
    Unshelve. all: auto.
    Qed.
 
-   Lemma wp_lea_success_reg_PC Ep pc_p pc_b pc_e pc_a pc_a' w rv z a' :
+   Lemma wp_lea_success_reg_PC Ep pc_asid pc_p pc_b pc_e pc_a pc_a' w rv z a' :
      decodeInstrW w = Lea PC (inr rv) →
-     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+     isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
      (a' + 1)%va = Some pc_a' →
      (pc_a + z)%va = Some a' →
      pc_p ≠ E →
 
-     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
+     {{{ ▷ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
            ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
            ∗ ▷ rv ↦ᵣ WInt z }}}
        Instr Executable @ Ep
        {{{ RET NextIV;
-           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
+           PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a'
               ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
               ∗ rv ↦ᵣ WInt z }}}.
    Proof.
@@ -241,23 +241,23 @@ Section cap_lang_rules.
     Unshelve. all: auto.
    Qed.
 
-   Lemma wp_lea_success_reg Ep pc_p pc_b pc_e pc_a pc_a' w r1 rv p b e a z a' :
+   Lemma wp_lea_success_reg Ep pc_asid pc_p pc_b pc_e pc_a pc_a' w r1 rv asid p b e a z a' :
      decodeInstrW w = Lea r1 (inr rv) →
-     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+     isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
      (pc_a + 1)%va = Some pc_a' →
      (a + z)%va = Some a' →
      p ≠ E →
 
-     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
+     {{{ ▷ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
            ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
-           ∗ ▷ r1 ↦ᵣ WCap p b e a
+           ∗ ▷ r1 ↦ᵣ WCap asid p b e a
            ∗ ▷ rv ↦ᵣ WInt z }}}
        Instr Executable @ Ep
        {{{ RET NextIV;
-           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
+           PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a'
               ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
               ∗ rv ↦ᵣ WInt z
-              ∗ r1 ↦ᵣ WCap p b e a' }}}.
+              ∗ r1 ↦ᵣ WCap asid p b e a' }}}.
    Proof.
      iIntros (Hinstr Hvpc Hpca' Ha' Hnep ϕ) "(>HPC & >Hpc_a & >Hr1 & >Hrv) Hφ".
      iDestruct (map_of_regs_3 with "HPC Hrv Hr1") as "[Hmap (%&%&%)]".
@@ -283,18 +283,18 @@ Section cap_lang_rules.
     Unshelve. all: auto.
    Qed.
 
-   Lemma wp_lea_success_z_PC Ep pc_p pc_b pc_e pc_a pc_a' w z a' :
+   Lemma wp_lea_success_z_PC Ep pc_asid pc_p pc_b pc_e pc_a pc_a' w z a' :
      decodeInstrW w = Lea PC (inl z) →
-     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+     isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
      (a' + 1)%va = Some pc_a' →
      (pc_a + z)%va = Some a' →
      pc_p ≠ E →
 
-     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
+     {{{ ▷ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
            ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w }}}
        Instr Executable @ Ep
      {{{ RET NextIV;
-         PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
+         PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a'
             ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w }}}.
    Proof.
      iIntros (Hinstr Hvpc Hpca' Ha' Hnep ϕ) "(>HPC & >Hpc_a) Hφ".
@@ -317,21 +317,21 @@ Section cap_lang_rules.
      Unshelve. all: auto.
    Qed.
 
-   Lemma wp_lea_success_z Ep pc_p pc_b pc_e pc_a pc_a' w r1 p b e a z a' :
+   Lemma wp_lea_success_z Ep pc_asid pc_p pc_b pc_e pc_a pc_a' w r1 asid p b e a z a' :
      decodeInstrW w = Lea r1 (inl z) →
-     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+     isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
      (pc_a + 1)%va = Some pc_a' →
      (a + z)%va = Some a' →
      p ≠ E →
 
-     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
+     {{{ ▷ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
            ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
-           ∗ ▷ r1 ↦ᵣ WCap p b e a }}}
+           ∗ ▷ r1 ↦ᵣ WCap asid p b e a }}}
        Instr Executable @ Ep
      {{{ RET NextIV;
-         PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
+         PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a'
             ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
-            ∗ r1 ↦ᵣ WCap p b e a' }}}.
+            ∗ r1 ↦ᵣ WCap asid p b e a' }}}.
    Proof.
      iIntros (Hinstr Hvpc Hpca' Ha' Hnep ϕ) "(>HPC & >Hpc_a & >Hr1) Hφ".
      iDestruct (map_of_regs_2 with "HPC Hr1") as "[Hmap %]".
@@ -358,19 +358,19 @@ Section cap_lang_rules.
 
    (* Similar rules in case we have a SealRange instead of a capability, where some cases are impossible, because a SealRange is not a valid PC *)
 
-   Lemma wp_lea_success_reg_sr Ep pc_p pc_b pc_e pc_a pc_a' w r1 rv p b e a z a' :
+   Lemma wp_lea_success_reg_sr Ep pc_asid pc_p pc_b pc_e pc_a pc_a' w r1 rv p b e a z a' :
      decodeInstrW w = Lea r1 (inr rv) →
-     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+     isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
      (pc_a + 1)%va = Some pc_a' →
      (a + z)%ot = Some a' →
 
-     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
+     {{{ ▷ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
            ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
            ∗ ▷ r1 ↦ᵣ WSealRange p b e a
            ∗ ▷ rv ↦ᵣ WInt z }}}
        Instr Executable @ Ep
        {{{ RET NextIV;
-           PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
+           PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a'
               ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
               ∗ rv ↦ᵣ WInt z
               ∗ r1 ↦ᵣ WSealRange p b e a' }}}.
@@ -398,18 +398,18 @@ Section cap_lang_rules.
     Unshelve. all: auto.
    Qed.
 
-  Lemma wp_lea_success_z_sr Ep pc_p pc_b pc_e pc_a pc_a' w r1 p b e a z a' :
+  Lemma wp_lea_success_z_sr Ep pc_asid pc_p pc_b pc_e pc_a pc_a' w r1 p b e a z a' :
      decodeInstrW w = Lea r1 (inl z) →
-     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+     isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
      (pc_a + 1)%va = Some pc_a' →
      (a + z)%ot = Some a' →
 
-     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
+     {{{ ▷ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
            ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
            ∗ ▷ r1 ↦ᵣ WSealRange p b e a }}}
        Instr Executable @ Ep
      {{{ RET NextIV;
-         PC ↦ᵣ WCap pc_p pc_b pc_e pc_a'
+         PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a'
             ∗ (TEMP_virt_to_phys pc_a) ↦ₐ w
             ∗ r1 ↦ᵣ WSealRange p b e a' }}}.
    Proof.
@@ -435,14 +435,14 @@ Section cap_lang_rules.
      Unshelve. all:auto.
    Qed.
 
-   Lemma wp_Lea_fail_none Ep pc_p pc_b pc_e pc_a w r1 rv p b e a z :
+   Lemma wp_Lea_fail_none Ep pc_asid pc_p pc_b pc_e pc_a w r1 rv asid p b e a z :
      decodeInstrW w = Lea r1 (inr rv) →
-     isCorrectPC (WCap pc_p pc_b pc_e pc_a) →
+     isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
      (a + z)%va = None ->
 
-     {{{ ▷ PC ↦ᵣ WCap pc_p pc_b pc_e pc_a
+     {{{ ▷ PC ↦ᵣ WCap pc_asid pc_p pc_b pc_e pc_a
            ∗ ▷ (TEMP_virt_to_phys pc_a) ↦ₐ w
-           ∗ ▷ r1 ↦ᵣ WCap p b e a
+           ∗ ▷ r1 ↦ᵣ WCap asid p b e a
            ∗ ▷ rv ↦ᵣ WInt z }}}
        Instr Executable @ Ep
        {{{ RET FailedV; True }}}.

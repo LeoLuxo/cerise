@@ -52,7 +52,7 @@ Section fundamental.
       destruct w' as [ | [p' b' e' a' | ] | ]; cycle 1.
       {
         rewrite /updatePcPerm.
-        iAssert (fixpoint interp1 (WCap p' b' e' a')) as "HECap".
+        iAssert (fixpoint interp1 (WCap asid p' b' e' a')) as "HECap".
         { destruct (decide (r1 = PC)) as [-> | Hne]. by simplify_map_eq.
           rewrite lookup_insert_ne // in H1.
           unshelve iDestruct ("Hreg" $! r1 _ _ H1) as "HPCv"; auto.
@@ -63,11 +63,11 @@ Section fundamental.
         - iClear "Hinv".
           rewrite fixpoint_interp1_eq; simpl.
           iDestruct ("HECap" with "[$Hmap $Hown]") as "Hcont"; auto.
-        - iAssert ([∗ map] k↦y ∈ <[PC:= WCap p' b' e' a']> r, k ↦ᵣ y)%I  with "[Hmap]" as "Hmap".
+        - iAssert ([∗ map] k↦y ∈ <[PC:= WCap asid p' b' e' a']> r, k ↦ᵣ y)%I  with "[Hmap]" as "Hmap".
           { destruct p'; auto. congruence. }
           iNext; iIntros "_".
 
-          iApply ("IH" $! (<[PC:=WCap p' b' e' a']> r) with "[%] [] [Hmap] [$Hown]").
+          iApply ("IH" $! (<[PC:=WCap asid p' b' e' a']> r) with "[%] [] [Hmap] [$Hown]").
           { cbn. intros. by repeat (rewrite lookup_insert_is_Some'; right). }
           { iIntros (ri v Hri Hvs).
             rewrite lookup_insert_ne in Hvs; auto.

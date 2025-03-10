@@ -40,8 +40,8 @@ Section fundamental.
       PermFlowsTo p' p ->
       IH -∗
       spec_ctx -∗
-      (fixpoint interp1) (WCap p b e a, WCap p b e a) -∗
-      (fixpoint interp1) (WCap p' b' e' a', WCap p' b' e' a').
+      (fixpoint interp1) (WCap asid p b e a, WCap asid p b e a) -∗
+      (fixpoint interp1) (WCap asid p' b' e' a', WCap asid p' b' e' a').
   Proof.
     intros HpnotE Hb He Hp. iIntros "#IH #Hspec #HA".
     destruct (decide (b' <= e')%a).

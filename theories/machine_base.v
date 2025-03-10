@@ -25,11 +25,6 @@ Definition permit_seal (s : SealPerms) :=
 Definition permit_unseal (s : SealPerms) :=
   s.2.
 
-Definition AsidNum := 50000%Z.
-
-Inductive Asid: Type :=
-| AddressSpaceID: (finz AsidNum) -> Asid.
-
 Inductive Sealable: Type :=
 | SCap: Asid -> Perm -> VirtAddr -> VirtAddr -> VirtAddr -> Sealable
 | SSealRange: SealPerms -> OType -> OType -> OType -> Sealable.
@@ -40,7 +35,7 @@ Inductive Word: Type :=
 | WSealable (sb : Sealable)
 | WSealed: OType → Sealable → Word.
 
-Notation WCap i p b e a := (WSealable (SCap i p b e a)).
+Notation WCap asid p b e a := (WSealable (SCap asid p b e a)).
 Notation WSealRange p b e a := (WSealable (SSealRange p b e a)).
 
 Inductive instr: Type :=
@@ -116,7 +111,7 @@ Definition is_sealb (w : Word) : bool :=
 (* Capability <-> Word *)
 Definition is_cap (w : Word) : bool :=
   match w with
-  | WCap i p b e a => true
+  | WCap asid p b e a => true
   |  _ => false
   end.
 
@@ -143,7 +138,7 @@ Definition is_sealed_with_o (w : Word) (o : OType) : bool :=
 (* non-E capability or range of seals *)
 Definition is_mutable_range (w : Word) : bool:=
   match w with
-  | WCap i p _ _ _ => match p with | E  => false | _ => true end
+  | WCap asid p _ _ _ => match p with | E  => false | _ => true end
   | WSealRange _ _ _ _ => true
   | _ => false end.
 
@@ -180,13 +175,13 @@ Proof. intros Hne. destruct p,p'; auto; congruence. Qed.
 
 Definition isPermWord (w : Word) (p : Perm): bool :=
   match w with
-  | WCap i p' _ _ _  => isPerm p p'
+  | WCap asid p' _ _ _  => isPerm p p'
   | _ => false
   end.
 
 Lemma isPermWord_cap_isPerm (w0:Word) p:
   isPermWord w0 p = true →
-  ∃ i p' b e a, w0 = WCap i p' b e a ∧ isPerm p p' = true.
+  ∃ asid p' b e a, w0 = WCap asid p' b e a ∧ isPerm p p' = true.
 Proof.
   intros Hp. rewrite /isPermWord in Hp.
   destruct_word w0; try congruence.
@@ -233,7 +228,7 @@ Definition PermFlowsTo (p1 p2: Perm): bool :=
 
 Definition PermFlowsToCap (p: Perm) (w: Word) : bool :=
   match w with
-  | WCap i p' _ _ _ => PermFlowsTo p p'
+  | WCap asid p' _ _ _ => PermFlowsTo p p'
   | _ => false
   end.
 
@@ -347,13 +342,13 @@ Qed.
 (* Turn E into RX into PC after a jump *)
 Definition updatePcPerm (w: Word): Word :=
   match w with
-  | WCap i E b e a => WCap i RX b e a
+  | WCap asid E b e a => WCap asid RX b e a
   | _ => w
   end.
 
-Lemma updatePcPerm_cap_non_E i p b e a :
+Lemma updatePcPerm_cap_non_E asid p b e a :
   p ≠ E →
-  updatePcPerm (WCap i p b e a) = WCap i p b e a.
+  updatePcPerm (WCap asid p b e a) = WCap asid p b e a.
 Proof.
   intros HnE. cbn. destruct p; auto. contradiction.
 Qed.
@@ -521,17 +516,17 @@ Qed.
 
 Inductive isCorrectPC: Word → Prop :=
 | isCorrectPC_intro:
-    forall i p (b e a : VirtAddr),
+    forall asid p (b e a : VirtAddr),
       (b <= a < e)%va →
       p = RX \/ p = RWX →
-      isCorrectPC (WCap i p b e a).
+      isCorrectPC (WCap asid p b e a).
 
 Lemma isCorrectPC_dec:
   forall w, { isCorrectPC w } + { not (isCorrectPC w) }.
 Proof.
   destruct w.
   - right. red; intros H. inversion H.
-  - destruct sb as [i p b e a | ].
+  - destruct sb as [asid p b e a | ].
     -- case_eq (match p with RX | RWX => true | _ => false end); intros.
       + destruct (finz_le_dec (finz_of_virt_addr b) (finz_of_virt_addr a)).
         * destruct (finz_lt_dec (finz_of_virt_addr a) (finz_of_virt_addr e)).
@@ -546,7 +541,7 @@ Qed.
 
 Definition isCorrectPCb (w: Word): bool :=
   match w with
-  | WCap i p b e a =>
+  | WCap asid p b e a =>
     (b <=? a)%va && (a <? e)%va &&
     (isPerm p RX || isPerm p RWX)
   | _ => false
@@ -572,8 +567,8 @@ Proof.
   { split; auto. intros _. intros ?%isCorrectPCb_isCorrectPC. congruence. }
 Qed.
 
-Lemma isCorrectPC_ra_wb pc_i pc_p pc_b pc_e pc_a :
-  isCorrectPC (WCap pc_i pc_p pc_b pc_e pc_a) →
+Lemma isCorrectPC_ra_wb pc_asid pc_p pc_b pc_e pc_a :
+  isCorrectPC (WCap pc_asid pc_p pc_b pc_e pc_a) →
   readAllowed pc_p && ((pc_b <=? pc_a)%va && (pc_a <? pc_e)%va).
 Proof.
   intros. inversion H; subst.
@@ -583,26 +578,26 @@ Proof.
       split; apply Is_true_eq_left; [apply Z.leb_le | apply Z.ltb_lt]; lia.
 Qed.
 
-Lemma not_isCorrectPC_perm i p b e a :
-  p ≠ RX ∧ p ≠ RWX → ¬ isCorrectPC (WCap i p b e a).
+Lemma not_isCorrectPC_perm asid p b e a :
+  p ≠ RX ∧ p ≠ RWX → ¬ isCorrectPC (WCap asid p b e a).
 Proof.
   intros (Hrx & Hrwx).
   intros Hvpc. inversion Hvpc.
     destruct H5 as [Hrx' | Hrwx']; contradiction.
 Qed.
 
-Lemma not_isCorrectPC_bounds i p b e a :
- ¬ (b <= a < e)%va → ¬ isCorrectPC (WCap i p b e a).
+Lemma not_isCorrectPC_bounds asid p b e a :
+ ¬ (b <= a < e)%va → ¬ isCorrectPC (WCap asid p b e a).
 Proof.
   intros Hbounds.
   intros Hvpc. inversion Hvpc.
   by exfalso.
 Qed.
 
-Lemma isCorrectPC_bounds i p b e (a0 a1 a2 : VirtAddr) :
-  isCorrectPC (WCap i p b e a0) →
-  isCorrectPC (WCap i p b e a2) →
-  (a0 <= a1 < a2)%va → isCorrectPC (WCap i p b e a1).
+Lemma isCorrectPC_bounds asid p b e (a0 a1 a2 : VirtAddr) :
+  isCorrectPC (WCap asid p b e a0) →
+  isCorrectPC (WCap asid p b e a2) →
+  (a0 <= a1 < a2)%va → isCorrectPC (WCap asid p b e a1).
 Proof.
   intros Hvpc0 Hvpc2 [Hle Hlt].
   inversion Hvpc0.
@@ -612,11 +607,11 @@ Proof.
       split; solve_addr.
 Qed.
 
-Lemma isCorrectPC_bounds_alt i p b e (a0 a1 a2 : VirtAddr) :
-  isCorrectPC (WCap i p b e a0)
-  → isCorrectPC (WCap i p b e a2)
+Lemma isCorrectPC_bounds_alt asid p b e (a0 a1 a2 : VirtAddr) :
+  isCorrectPC (WCap asid p b e a0)
+  → isCorrectPC (WCap asid p b e a2)
   → (a0 <= a1)%va ∧ (a1 <= a2)%va
-  → isCorrectPC (WCap i p b e a1).
+  → isCorrectPC (WCap asid p b e a1).
 Proof.
   intros Hvpc0 Hvpc2 [Hle0 Hle2].
   apply Z.lt_eq_cases in Hle2 as [Hlt2 | Heq2].
@@ -624,29 +619,29 @@ Proof.
   - destruct a1, a2. unfold finz_of_virt_addr in Heq2. apply finz_to_z_eq in Heq2. rewrite Heq2. exact.
 Qed.
 
-Lemma isCorrectPC_withinBounds i p b e a :
-  isCorrectPC (WCap i p b e a) →
+Lemma isCorrectPC_withinBounds asid p b e a :
+  isCorrectPC (WCap asid p b e a) →
   withinBoundsVirt b e a = true.
 Proof.
   intros HH. inversion HH; subst.
   rewrite /withinBounds !andb_true_iff Z.leb_le Z.ltb_lt. auto.
 Qed.
 
-Lemma isCorrectPC_le_addr i p b e a :
-  isCorrectPC (WCap i p b e a) →
+Lemma isCorrectPC_le_addr asid p b e a :
+  isCorrectPC (WCap asid p b e a) →
   (b <= a)%va ∧ (a < e)%va.
 Proof.
   intros HH. by eapply withinBounds_le_addr, isCorrectPC_withinBounds.
 Qed.
 
-Lemma correctPC_nonO i p p' b e a :
-  PermFlows p p' → isCorrectPC (WCap i p b e a) → p' ≠ O.
+Lemma correctPC_nonO asid p p' b e a :
+  PermFlows p p' → isCorrectPC (WCap asid p b e a) → p' ≠ O.
 Proof.
   intros Hfl HcPC. inversion HcPC. by apply (PCPerm_nonO p p').
 Qed.
 
-Lemma in_range_is_correctPC i p b e a b' e' :
-  isCorrectPC (WCap i p b e a) →
+Lemma in_range_is_correctPC asid p b e a b' e' :
+  isCorrectPC (WCap asid p b e a) →
   (b' <= b)%va ∧ (e <= e')%va →
   (b' <= a)%va ∧ (a < e')%va.
 Proof.
@@ -654,10 +649,10 @@ Proof.
   inversion Hvpc; simplify_eq. solve_addr.
 Qed.
 
-Lemma isCorrectPC_ExecPCPerm_InBounds i p b e a :
+Lemma isCorrectPC_ExecPCPerm_InBounds asid p b e a :
   ExecPCPerm p →
   InBoundsVirt b e a →
-  isCorrectPC (WCap i p b e a).
+  isCorrectPC (WCap asid p b e a).
 Proof.
   unfold ExecPCPerm, InBounds. intros. constructor; eauto.
 Qed.
@@ -710,12 +705,12 @@ Global Instance sealable_countable : Countable Sealable.
 Proof.
   set (enc := fun sb =>
        match sb with
-       | SCap i p b e a => inl (i,p,b,e,a)
+       | SCap asid p b e a => inl (asid,p,b,e,a)
        | SSealRange p b e a => inr (p,b,e,a) end
       ).
   set (dec := fun e =>
        match e with
-       | inl (i,p,b,e,a) => SCap i p b e a
+       | inl (asid,p,b,e,a) => SCap asid p b e a
        | inr (p,b,e,a) => SSealRange p b e a end
       ).
   refine (inj_countable' enc dec _).
