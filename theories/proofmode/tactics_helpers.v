@@ -9,19 +9,19 @@ Section helpers.
 
   (* ---------------------------- Helper Lemmas --------------------------------------- *)
 
-  Definition isCorrectPC_range p b e a0 an :=
+  Definition isCorrectPC_range asid p b e a0 an :=
     ∀ ai, (a0 <= ai)%va ∧ (ai < an)%va → isCorrectPC (WCap asid p b e ai).
 
-  Lemma isCorrectPC_inrange p b (e a0 an a: VirtAddr) :
-    isCorrectPC_range p b e a0 an →
+  Lemma isCorrectPC_inrange asid p b (e a0 an a: VirtAddr) :
+    isCorrectPC_range asid p b e a0 an →
     (a0 <= a < an)%va →
     isCorrectPC (WCap asid p b e a).
   Proof.
     unfold isCorrectPC_range. move=> /(_ a) HH ?. apply HH. eauto.
   Qed.
 
-  Lemma isCorrectPC_contiguous_range p b e a0 an a l :
-    isCorrectPC_range p b e a0 an →
+  Lemma isCorrectPC_contiguous_range asid p b e a0 an a l :
+    isCorrectPC_range asid p b e a0 an →
     contiguous_between l (TEMP_virt_to_phys a0) (TEMP_virt_to_phys an) →
     (TEMP_virt_to_phys a) ∈ l →
     isCorrectPC (WCap asid p b e a).
@@ -31,8 +31,8 @@ Section helpers.
     eapply contiguous_between_middle_bounds'; eauto.
   Qed. *)
 
-  Lemma isCorrectPC_range_perm p b e a0 an :
-    isCorrectPC_range p b e a0 an →
+  Lemma isCorrectPC_range_perm asid p b e a0 an :
+    isCorrectPC_range asid p b e a0 an →
     (a0 < an)%va →
     p = RX ∨ p = RWX.
   Proof.
@@ -41,13 +41,13 @@ Section helpers.
     inversion HH; auto.
   Qed.
 
-  Lemma isCorrectPC_range_npE p b e a0 an :
-    isCorrectPC_range p b e a0 an →
+  Lemma isCorrectPC_range_npE asid p b e a0 an :
+    isCorrectPC_range asid p b e a0 an →
     (a0 < an)%va →
     p ≠ E.
   Proof.
     intros HH1 HH2.
-    destruct (isCorrectPC_range_perm _ _ _ _ _ HH1 HH2) as [?| ? ];
+    destruct (isCorrectPC_range_perm _ _ _ _ _ _ HH1 HH2) as [?| ? ];
       congruence.
   Qed.
 

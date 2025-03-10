@@ -290,19 +290,19 @@ Section Contiguous.
 
 End Contiguous.
 
-Definition isCorrectPC_range p b e a0 an :=
+Definition isCorrectPC_range asid p b e a0 an :=
   ∀ ai, (a0 <= ai)%va ∧ (ai < an)%va → isCorrectPC (WCap asid p b e ai).
 
-Lemma isCorrectPC_inrange p b (e a0 an a: VirtAddr) :
-  isCorrectPC_range p b e a0 an →
+Lemma isCorrectPC_inrange asid p b (e a0 an a: VirtAddr) :
+  isCorrectPC_range asid p b e a0 an →
   (a0 <= a < an)%va →
   isCorrectPC (WCap asid p b e a).
 Proof.
   unfold isCorrectPC_range. move=> /(_ a) HH ?. apply HH. eauto.
 Qed.
 
-Lemma isCorrectPC_contiguous_range p b e a0 an a l :
-  isCorrectPC_range p b e a0 an →
+Lemma isCorrectPC_contiguous_range asid p b e a0 an a l :
+  isCorrectPC_range asid p b e a0 an →
   contiguous_between l (TEMP_virt_to_phys a0) (TEMP_virt_to_phys an) →
   (TEMP_virt_to_phys a) ∈ l →
   isCorrectPC (WCap asid p b e a).
@@ -312,8 +312,8 @@ Proof. Admitted.
   eapply contiguous_between_middle_bounds'; eauto.
 Qed. *)
 
-Lemma isCorrectPC_range_perm p b e a0 an :
-  isCorrectPC_range p b e a0 an →
+Lemma isCorrectPC_range_perm asid p b e a0 an :
+  isCorrectPC_range asid p b e a0 an →
   (a0 < an)%va →
   p = RX ∨ p = RWX.
 Proof.
@@ -322,19 +322,19 @@ Proof.
   inversion HH; auto.
 Qed.
 
-Lemma isCorrectPC_range_perm_non_E p b e a0 an :
-  isCorrectPC_range p b e a0 an →
+Lemma isCorrectPC_range_perm_non_E asid p b e a0 an :
+  isCorrectPC_range asid p b e a0 an →
   (a0 < an)%va →
   p ≠ E.
 Proof.
-  intros HH1 HH2. pose proof (isCorrectPC_range_perm _ _ _ _ _ HH1 HH2).
+  intros HH1 HH2. pose proof (isCorrectPC_range_perm _ _ _ _ _ _ HH1 HH2).
   naive_solver.
 Qed.
 
-Lemma isCorrectPC_range_restrict p b e a0 an a0' an' :
-  isCorrectPC_range p b e a0 an →
+Lemma isCorrectPC_range_restrict asid p b e a0 an a0' an' :
+  isCorrectPC_range asid p b e a0 an →
   (a0 <= a0')%va ∧ (an' <= an)%va →
-  isCorrectPC_range p b e a0' an'.
+  isCorrectPC_range asid p b e a0' an'.
 Proof.
   intros HR [? ?] a' [? ?]. apply HR. solve_addr.
 Qed.
