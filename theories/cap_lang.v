@@ -6,7 +6,8 @@ Set Warnings "-redundant-canonical-projection".
 
 (* Ltac inv H := inversion H; clear H; subst. *)
 
-Definition ExecConf := (Reg * Mem)%type.
+(* Is implicitly equivalent to ((Reg * Mem) * Mmu) *)
+Definition ExecConf := (Reg * Mem * Mmu)%type.
 
 Inductive ConfFlag : Type :=
 | Executable
@@ -16,12 +17,13 @@ Inductive ConfFlag : Type :=
 
 Definition Conf: Type := ConfFlag * ExecConf.
 
-Definition reg (ϕ: ExecConf) := fst ϕ.
+Definition reg (ϕ: ExecConf) := ϕ.1.1.
+Definition mem (ϕ: ExecConf) := ϕ.1.2.
+Definition mmu (ϕ: ExecConf) := ϕ.2.
 
-Definition mem (ϕ: ExecConf) := snd ϕ.
-
-Definition update_reg (φ: ExecConf) (r: RegName) (w: Word): ExecConf := (<[r:=w]>(reg φ),mem φ).
-Definition update_mem (φ: ExecConf) (pa: PhysAddr) (w: Word): ExecConf := (reg φ, <[pa:=w]>(mem φ)).
+Definition update_reg (φ: ExecConf) (r: RegName) (w: Word): ExecConf := (<[r:=w]>(reg φ), mem φ, mmu φ).
+Definition update_mem (φ: ExecConf) (pa: PhysAddr) (w: Word): ExecConf := (reg φ, <[pa:=w]>(mem φ), mmu φ).
+Definition update_mmu (φ: ExecConf) (asid: Asid) (pa: PhysAddr): ExecConf := (reg φ, mem φ, <[asid:=pa]>(mmu φ)).
 
 (* Note that the `None` values here also undo any previous changes that were tentatively made in the same step. This is more consistent across the board. *)
 Definition updatePC (φ: ExecConf): option Conf :=
@@ -428,13 +430,13 @@ Section opsem.
     intros * H1 H2; split; inv H1; inv H2; auto; try congruence.
   Qed.
 
-  Lemma step_exec_inv (r: Reg) asid p b e a m w instr (c: ConfFlag) (σ: ExecConf) :
+  Lemma step_exec_inv (r: Reg) asid p b e a m w u instr (c: ConfFlag) (σ: ExecConf) :
     r !! PC = Some (WCap asid p b e a) →
     isCorrectPC (WCap asid p b e a) →
     m !! (TEMP_virt_to_phys a) = Some w →
     decodeInstrW w = instr →
-    step (Executable, (r, m)) (c, σ) →
-    exec instr (r, m) = (c, σ).
+    step (Executable, (r, m, u)) (c, σ) →
+    exec instr (r, m, u) = (c, σ).
   Proof.
     intros HPC Hpc Hm Hinstr. inversion 1; cbn in *.
     1,2,3: congruence.

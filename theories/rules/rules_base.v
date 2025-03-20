@@ -2,7 +2,7 @@ From iris.proofmode Require Import proofmode.
 From iris.base_logic Require Export invariants gen_heap.
 From iris.program_logic Require Export weakestpre ectx_lifting.
 From iris.algebra Require Import frac auth.
-From cap_machine Require Export cap_lang iris_extra stdpp_extra.
+From cap_machine Require Export cap_lang iris_extra stdpp_extra addr_reg.
 
 (* CMRΑ for memory *)
 Class memG Σ := MemG {
@@ -13,12 +13,19 @@ Class memG Σ := MemG {
 Class regG Σ := RegG {
   reg_invG : invGS Σ;
   reg_gen_regG :: gen_heapGS RegName Word Σ; }.
+  
+(* CMRA for mmu *)
+Class mmuG Σ := MmuG {
+  mmu_invG : invGS Σ;
+  mmu_gen_mmuG :: gen_heapGS Asid PhysAddr Σ; }.
 
-
-(* invariants for memory, and a state interpretation for (mem,reg) *)
-Global Instance memG_irisG `{MachineParameters} `{!memG Σ, !regG Σ} : irisGS cap_lang Σ := {
+(* invariants for memory, and a state interpretation for (mem,reg,mmu) *)
+Global Instance memG_irisG `{MachineParameters} `{!memG Σ, !regG Σ, !mmuG Σ} : irisGS cap_lang Σ := {
   iris_invGS := mem_invG;
-  state_interp σ _ κs _ := ((gen_heap_interp σ.1) ∗ (gen_heap_interp σ.2))%I;
+  state_interp σ _ κs _ := ((
+    (gen_heap_interp (mem σ))
+  ∗ (gen_heap_interp (reg σ)))
+  ∗ (gen_heap_interp (mmu σ)))%I;
   fork_post _ := True%I;
   num_laters_per_step _ := 0;
   state_interp_mono _ _ _ _ := fupd_intro _ _
@@ -33,6 +40,11 @@ Notation "r ↦ᵣ w" := (pointsto (L:=RegName) (V:=Word) r (DfracOwn 1) w) (at 
 Notation "a ↦ₐ{ q } w" := (pointsto (L:=PhysAddr) (V:=Word) a q w)
   (at level 20, q at level 50, format "a  ↦ₐ{ q }  w") : bi_scope.
 Notation "a ↦ₐ w" := (pointsto (L:=PhysAddr) (V:=Word) a (DfracOwn 1) w) (at level 20) : bi_scope.
+
+(* Points to predicates for mmu *)
+Notation "asid ↦ᵢ{ q } a" := (pointsto (L:=Asid) (V:=PhysAddr) asid q a)
+  (at level 20, q at level 50, format "asid  ↦ᵢ{ q } a") : bi_scope.
+Notation "asid ↦ᵢ a" := (pointsto (L:=PhysAddr) (V:=Word) asid (DfracOwn 1) a) (at level 20) : bi_scope.
 
 (* --------------------------- LTAC DEFINITIONS ----------------------------------- *)
 
@@ -51,7 +63,7 @@ Ltac inv_base_step :=
 
 Section cap_lang_rules.
   Context `{MachineParameters}.
-  Context `{memG Σ, regG Σ}.
+  Context `{memG, regG, mmuG}.
   Implicit Types P Q : iProp Σ.
   Implicit Types σ : ExecConf.
   Implicit Types c : cap_lang.expr.
@@ -77,7 +89,7 @@ Section cap_lang_rules.
   Proof.
     iIntros "Hr1 Hr2".
     iDestruct (pointsto_valid_2 with "Hr1 Hr2") as %?.
-    destruct H2. eapply dfrac_full_exclusive in H2. auto.
+    destruct H3. eapply dfrac_full_exclusive in H3. auto.
   Qed.
 
   Lemma regname_neq r1 r2 w1 w2 :
@@ -170,7 +182,7 @@ Section cap_lang_rules.
   Proof.
     iIntros "Ha1 Ha2".
     iDestruct (pointsto_valid_2 with "Ha1 Ha2") as %?.
-    destruct H2. eapply dfrac_full_exclusive in H2.
+    destruct H3. eapply dfrac_full_exclusive in H3.
     auto.
   Qed.
 
@@ -268,6 +280,7 @@ Section cap_lang_rules.
      ∃ κ e2 (σ2:cap_lang.state) efs, ⌜cap_lang.prim_step e1 σ1 κ e2 σ2 efs⌝ ∗
       (▷ |==> (state_interp σ2 (S ns) κs nt ∗ from_option Φ False (to_val e2))))
       ⊢ WP e1 @ s; E {{ Φ }}.
+      Next Obligation.
   Proof.
     iIntros (?) "H". iApply wp_lift_atomic_base_step_no_fork; auto.
     iIntros (σ1 ns κ κs nt)  "Hσ1 /=".

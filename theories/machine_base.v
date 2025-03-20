@@ -71,6 +71,7 @@ Coercion cst : Z >-> sum.
 
 Definition Reg := gmap RegName Word.
 Definition Mem := gmap PhysAddr Word.
+Definition Mmu := gmap Asid PhysAddr.
 
 (* EqDecision instances *)
 
@@ -668,16 +669,6 @@ Ltac destruct_pair_l c n :=
 
 (* Useful instances *)
 
-Global Instance asid_countable : Countable Asid.
-Proof.
-  set enc := fun i => match i with
-    | AddressSpaceID f => f
-  end.
-  set dec := fun f => AddressSpaceID f.
-  refine (inj_countable' enc dec _).
-  intro i. destruct i; reflexivity.
-Qed.
-
 Global Instance perm_countable : Countable Perm.
 Proof.
   set encode := fun p => match p with
@@ -736,6 +727,7 @@ Proof.
   intros i. destruct i; simpl; done.
 Qed.
 
+Global Instance asid_inhabited: Inhabited Asid := populate 0%asid.
 Global Instance word_inhabited: Inhabited Word := populate (WInt 0).
 Global Instance phys_addr_inhabited: Inhabited PhysAddr := populate za_phys.
 Global Instance virt_addr_inhabited: Inhabited VirtAddr := populate za_virt.

@@ -223,6 +223,36 @@ Notation "0" := (AddressSpaceID (@finz.FinZ AsidNum 0%Z eq_refl eq_refl)) : Asid
 Notation eqb_asid := (λ (i1 i2: Asid), Z.eqb i1 i2).
 Notation "i1 =? i2" := (eqb_asid i1 i2) : Asid_scope.
 
+Definition finz_to_asid: (finz AsidNum) -> Asid := AddressSpaceID.
+
+
+Definition finz_of_asid (asid: Asid): finz AsidNum := 
+  match asid with
+  | AddressSpaceID f => f
+  end.
+
+
+Global Instance Asid_eq_dec : EqDecision Asid.
+Proof.
+  intros x1 x2. destruct x1 as [x1], x2 as [x2]. destruct (finz_eq_dec x1 x2).
+  - left. f_equal. exact.
+  - right. intro. inversion H. contradiction.
+Qed.
+
+Global Instance asid_countable : Countable Asid.
+Proof.
+  set enc := fun i => match i with
+    | AddressSpaceID f => f
+  end.
+  set dec := fun f => AddressSpaceID f.
+  refine (inj_countable' enc dec _).
+  intro i. destruct i; reflexivity.
+Qed.
+
+Class AsidEq (f f' : Asid) (res : bool) :=
+  MkAsidEq: res = true → f = f'.
+#[global] Hint Mode AsidEq + + - : typeclass_instances.
+
 
 
 
@@ -422,7 +452,7 @@ Class VirtAddrEq (f f' : VirtAddr) (res : bool) :=
   MkVirtAddrEq: res = true → f = f'.
 #[global] Hint Mode VirtAddrEq + + - : typeclass_instances.
 
-(* -------------------------------- Address convertion -----------------------------------*)
+(* -------------------------------- Address conversion -----------------------------------*)
 
 Lemma phys_fits_in_virt :
   (MemNumPhys <= MemNumVirt)%Z.
