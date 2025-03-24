@@ -40,7 +40,7 @@
 
         # Extra dependencies to add to the project; the ones from the .opam file will be loaded automatically
         extraQuery = {
-          ocaml-base-compiler = "4.14.1"; # Required for version 8.18 of coq
+          ocaml-base-compiler = "*";
           coq-lsp = "*";
           vscoq-language-server = "2.2.5";
         };
