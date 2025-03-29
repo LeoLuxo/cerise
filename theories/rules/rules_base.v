@@ -2,7 +2,7 @@ From iris.proofmode Require Import proofmode.
 From iris.base_logic Require Export invariants gen_heap.
 From iris.program_logic Require Export weakestpre ectx_lifting.
 From iris.algebra Require Import frac auth.
-From cap_machine Require Export cap_lang iris_extra stdpp_extra addr_reg.
+From cap_machine Require Export cap_lang iris_extra stdpp_extra.
 
 (* CMRΑ for memory *)
 Class memG Σ := MemG {
@@ -63,7 +63,7 @@ Ltac inv_base_step :=
 
 Section cap_lang_rules.
   Context `{MachineParameters}.
-  Context `{memG, regG, mmuG}.
+  Context `{memG Σ, regG Σ, mmuG Σ}.
   Implicit Types P Q : iProp Σ.
   Implicit Types σ : ExecConf.
   Implicit Types c : cap_lang.expr.
@@ -274,13 +274,13 @@ Section cap_lang_rules.
     rewrite lookup_insert //.
   Qed.
 
+  (* TODO *)
   Program Definition wp_lift_atomic_base_step_no_fork_determ {s E Φ} e1 :
     to_val e1 = None →
     (∀ (σ1:cap_lang.state) ns κ κs nt, state_interp σ1 ns (κ ++ κs) nt ={E}=∗
      ∃ κ e2 (σ2:cap_lang.state) efs, ⌜cap_lang.prim_step e1 σ1 κ e2 σ2 efs⌝ ∗
       (▷ |==> (state_interp σ2 (S ns) κs nt ∗ from_option Φ False (to_val e2))))
       ⊢ WP e1 @ s; E {{ Φ }}.
-      Next Obligation.
   Proof.
     iIntros (?) "H". iApply wp_lift_atomic_base_step_no_fork; auto.
     iIntros (σ1 ns κ κs nt)  "Hσ1 /=".
@@ -498,11 +498,11 @@ Section cap_lang_rules.
       + iIntros "Hmem". iDestruct (big_sepM_insert with "Hmem") as "[Ha Hmem]";auto.
         iApply big_sepM_insert.
         { rewrite lookup_merge /prod_op /=.
-          destruct (create_gmap_default (elements (dom mem)) dq !! a);auto; rewrite H2;auto. }
+          destruct (create_gmap_default (elements (dom mem)) dq !! a);auto; rewrite H3;auto. }
         iFrame. iApply "IH". iFrame.
       + iIntros "Hmem". iDestruct (big_sepM_insert with "Hmem") as "[Ha Hmem]";auto.
         { rewrite lookup_merge /prod_op /=.
-          destruct (create_gmap_default (elements (dom mem)) dq !! a);auto; rewrite H2;auto. }
+          destruct (create_gmap_default (elements (dom mem)) dq !! a);auto; rewrite H3;auto. }
         iApply big_sepM_insert. auto.
         iFrame. iApply "IH". iFrame.
   Qed.
@@ -554,7 +554,7 @@ Section cap_lang_rules.
 
   (* ----------------------------------- FAIL RULES ---------------------------------- *)
   (* Bind Scope expr_scope with language.expr cap_lang. *)
-
+  
   Lemma wp_notCorrectPC:
     forall E w,
       ~ isCorrectPC w ->
@@ -565,8 +565,8 @@ Section cap_lang_rules.
     intros *. intros Hnpc.
     iIntros (ϕ) "HPC Hϕ".
     iApply wp_lift_atomic_base_step_no_fork; auto.
-    iIntros (σ1 nt l1 l2 ns) "Hσ1 /="; destruct σ1; simpl;
-    iDestruct "Hσ1" as "[Hr Hm]".
+    iIntros (σ1 nt l1 l2 ns) "Hσ1 /="; destruct σ1 as [[? ?] ?]. simpl. 
+    iDestruct "Hσ1" as "[[Hm Hr] Hm0]".
     iDestruct (@gen_heap_valid with "Hr HPC") as %?.
     iApply fupd_frame_l.
     iSplit. by iPureIntro; apply normal_always_base_reducible.
@@ -619,8 +619,8 @@ Section cap_lang_rules.
     intros Hinstr Hvpc.
     iIntros (φ) "[Hpc Hpca] Hφ".
     iApply wp_lift_atomic_base_step_no_fork; auto.
-    iIntros (σ1 ns l1 l2 nt) "Hσ1 /=". destruct σ1; simpl.
-    iDestruct "Hσ1" as "[Hr Hm]".
+    iIntros (σ1 ns l1 l2 nt) "Hσ1 /=". destruct σ1 as [[? ?] ?]; simpl.
+    iDestruct "Hσ1" as "[[Hm Hr] Hm0]".
     iDestruct (@gen_heap_valid with "Hr Hpc") as %?.
     iDestruct (@gen_heap_valid with "Hm Hpca") as %?.
     iModIntro.
@@ -643,8 +643,8 @@ Section cap_lang_rules.
     intros Hinstr Hvpc.
     iIntros (φ) "[Hpc Hpca] Hφ".
     iApply wp_lift_atomic_base_step_no_fork; auto.
-    iIntros (σ1 ns l1 l2 nt) "Hσ1 /=". destruct σ1; simpl.
-    iDestruct "Hσ1" as "[Hr Hm]".
+    iIntros (σ1 ns l1 l2 nt) "Hσ1 /=". destruct σ1 as [[? ?] ?]; simpl.
+    iDestruct "Hσ1" as "[[Hm Hr] Hm0]".
     iDestruct (@gen_heap_valid with "Hr Hpc") as %?.
     iDestruct (@gen_heap_valid with "Hm Hpca") as %?.
     iModIntro.
@@ -799,37 +799,37 @@ Proof.
 Qed.
 
 (* todo: instead, define updatePC on top of incrementPC *)
-Lemma incrementPC_fail_updatePC regs m :
+Lemma incrementPC_fail_updatePC regs m mu :
    incrementPC regs = None ->
-   updatePC (regs, m) = None.
+   updatePC (regs, m, mu) = None.
 Proof.
-   rewrite /incrementPC /updatePC /=.
+   rewrite /incrementPC /updatePC /=. unfold reg; simpl.
    destruct (regs !! PC) as [X|]; auto.
    destruct X as [| [? ? ? ? a' | ] |]; auto.
    destruct (a' + 1)%va; auto. congruence.
 Qed.
 
-Lemma incrementPC_success_updatePC regs m regs' :
+Lemma incrementPC_success_updatePC regs m mu regs' :
   incrementPC regs = Some regs' ->
   ∃ asid p b e a a',
     regs !! PC = Some (WCap asid p b e a) ∧
     (a + 1)%va = Some a' ∧
-    updatePC (regs, m) = Some (NextI, (<[ PC := WCap asid p b e a' ]> regs, m)) ∧
+    updatePC (regs, m, mu) = Some (NextI, (<[ PC := WCap asid p b e a' ]> regs, m, mu)) ∧
     regs' = <[ PC := WCap asid p b e a' ]> regs.
 Proof.
-  rewrite /incrementPC /updatePC /update_reg /=.
+  rewrite /incrementPC /updatePC /update_reg /=. unfold reg; simpl.
   destruct (regs !! PC) as [X|] eqn:?; auto; try congruence; [].
   destruct X as [| [? ? ? ? a'|]|] eqn:?; try congruence; [].
   destruct (a' + 1)%va eqn:?; [| congruence]. inversion 1; subst regs'.
   do 6 eexists. repeat split; auto.
 Qed.
 
-Lemma updatePC_success_incl m m' regs regs' w :
+Lemma updatePC_success_incl m m' mu mu' regs regs' w :
   regs ⊆ regs' →
-  updatePC (regs, m) = Some (NextI, (<[ PC := w ]> regs, m)) →
-  updatePC (regs', m') = Some (NextI, (<[ PC := w ]> regs', m')).
+  updatePC (regs, m, mu) = Some (NextI, (<[ PC := w ]> regs, m, mu)) →
+  updatePC (regs', m', mu') = Some (NextI, (<[ PC := w ]> regs', m', mu')).
 Proof.
-  intros * Hincl Hu. rewrite /updatePC /= in Hu |- *.
+  intros * Hincl Hu. rewrite /updatePC /= in Hu |- *. unfold reg in *; simpl in *.
   destruct (regs !! PC) as [ w1 |] eqn:Hrr.
   { pose proof (lookup_weaken _ _ _ _ Hrr Hincl) as Hregs'. rewrite Hregs'.
     destruct w1 as [|[? ? ? ? a1|] | ]; simplify_eq.
@@ -841,11 +841,11 @@ Proof.
   {  inversion Hu. }
 Qed.
 
-Lemma updatePC_fail_incl m m' regs regs' :
+Lemma updatePC_fail_incl m m' mu mu' regs regs' :
   is_Some (regs !! PC) →
   regs ⊆ regs' →
-  updatePC (regs, m) = None →
-  updatePC (regs', m') = None.
+  updatePC (regs, m, mu) = None →
+  updatePC (regs', m', mu') = None.
 Proof.
   intros [w HPC] Hincl Hfail. rewrite /updatePC /= in Hfail |- *.
   rewrite !HPC in Hfail. have -> := lookup_weaken _ _ _ _ HPC Hincl.
