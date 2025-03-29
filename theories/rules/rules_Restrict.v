@@ -5,7 +5,7 @@ From iris.algebra Require Import frac.
 From cap_machine Require Export rules_base.
 
 Section cap_lang_rules.
-  Context `{memG Σ, regG Σ}.
+  Context `{memG Σ, regG Σ, mmuG Σ}.
   Context `{MachineParameters}.
   Implicit Types P Q : iProp Σ.
   Implicit Types σ : ExecConf.
@@ -83,8 +83,8 @@ Section cap_lang_rules.
   Proof.
     iIntros (Hinstr Hvpc HPC Dregs φ) "(>Hpc_a & >Hmap) Hφ".
     iApply wp_lift_atomic_base_step_no_fork; auto.
-    iIntros (σ1 ns l1 l2 nt) "Hσ1 /=". destruct σ1; simpl.
-    iDestruct "Hσ1" as "[Hr Hm]".
+    iIntros (σ1 ns l1 l2 nt) "Hσ1 /=". destruct σ1 as [[r m] mu]; simpl.
+    iDestruct "Hσ1" as "[[Hm Hr] Hmu]".
     iDestruct (gen_heap_valid_inclSepM with "Hr Hmap") as %Hregs.
     have ? := lookup_weaken _ _ _ _ HPC Hregs.
     iDestruct (@gen_heap_valid with "Hm Hpc_a") as %Hpc_a; auto.
@@ -107,7 +107,7 @@ Section cap_lang_rules.
        odestruct (Hri r0) as [r0v [Hr'0 Hr0]].
        { unfold regs_of_argument. set_solver+. }
        rewrite Hr0 Hr'0 in Hwsrc Hstep.
-       assert (c = Failed ∧ σ2 = (r, m)) as (-> & ->).
+       assert (c = Failed ∧ σ2 = (r, m, mu)) as (-> & ->).
        { destruct_word r0v; cbn in Hstep; try congruence; by simplify_pair_eq. }
        iFailWP "Hφ" Restrict_fail_src_nonz. }
     apply (z_of_arg_mono _ r) in Hwsrc; auto. rewrite Hwsrc in Hstep; simpl in Hstep.
@@ -115,7 +115,7 @@ Section cap_lang_rules.
     destruct (is_mutable_range wdst) eqn:Hwdst.
      2: { (* Failure: wdst is not of the right type *)
        unfold is_mutable_range in Hwdst.
-       assert (c = Failed ∧ σ2 = (r, m)) as (-> & ->).
+       assert (c = Failed ∧ σ2 = (r, m, mu)) as (-> & ->).
        { destruct wdst as [ | [asid p b e a | ] | ]; try by inversion Hwdst.
          all: try by simplify_pair_eq.
          destruct p; try congruence.
@@ -141,8 +141,8 @@ Section cap_lang_rules.
          { eapply incrementPC_overflow_mono; first eapply Hregs'.
              by rewrite lookup_insert_is_Some'; eauto.
                by apply insert_mono; eauto. }
-         apply (incrementPC_fail_updatePC _ m) in HH. rewrite HH in Hstep.
-         assert (c = Failed ∧ σ2 = (r, m)) as (-> & ->)
+         apply (incrementPC_fail_updatePC _ m mu) in HH. rewrite HH in Hstep.
+         assert (c = Failed ∧ σ2 = (r, m, mu)) as (-> & ->)
              by (destruct p; inversion Hstep; auto).
          iFailWP "Hφ" Restrict_fail_PC_overflow_cap. }
 
@@ -169,8 +169,8 @@ Section cap_lang_rules.
          { eapply incrementPC_overflow_mono; first eapply Hregs'.
              by rewrite lookup_insert_is_Some'; eauto.
                by apply insert_mono; eauto. }
-         apply (incrementPC_fail_updatePC _ m) in HH. rewrite HH in Hstep.
-         assert (c = Failed ∧ σ2 = (r, m)) as (-> & ->)
+         apply (incrementPC_fail_updatePC _ m mu) in HH. rewrite HH in Hstep.
+         assert (c = Failed ∧ σ2 = (r, m, mu)) as (-> & ->)
              by (destruct p; inversion Hstep; auto).
          iFailWP "Hφ" Restrict_fail_PC_overflow_sr. }
 
@@ -185,6 +185,7 @@ Section cap_lang_rules.
        iMod ((gen_heap_update_inSepM _ _ dst) with "Hr Hmap") as "[Hr Hmap]"; eauto.
        iMod ((gen_heap_update_inSepM _ _ PC) with "Hr Hmap") as "[Hr Hmap]"; eauto.
        iFrame. iApply "Hφ". iFrame. iPureIntro. econstructor 2; eauto.
+  Unshelve. all: auto.
   Qed.
 
   Lemma wp_restrict_success_reg_PC Ep pc_asid pc_p pc_b pc_e pc_a pc_a' w rv z:

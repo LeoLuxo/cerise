@@ -2,7 +2,7 @@ From iris.proofmode Require Import proofmode.
 From cap_machine Require Import rules_base addr_reg_sample map_simpl.
 
 Section test.
-  Context `{memG Σ, regG Σ}.
+  Context `{memG Σ, regG Σ, mmuG Σ}.
 
   Lemma foo rmap:
     ([∗ map] k↦y ∈ <[r_t3:=WInt 0%Z]>

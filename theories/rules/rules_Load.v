@@ -5,7 +5,7 @@ From iris.algebra Require Import frac.
 From cap_machine Require Export rules_base stdpp_extra.
 
 Section cap_lang_rules.
-  Context `{memG Σ, regG Σ}.
+  Context `{memG Σ, regG Σ, mmuG Σ}.
   Context `{MachineParameters}.
   Implicit Types P Q : iProp Σ.
   Implicit Types σ : ExecConf.
@@ -184,7 +184,7 @@ Section cap_lang_rules.
      (* Now we start splitting on the different cases in the Load spec, and prove them one at a time *)
      destruct (is_cap r2v) eqn:Hr2v.
      2:{ (* Failure: r2 is not a capability *)
-       assert (c = Failed ∧ σ2 = (r, m)) as (-> & ->).
+       assert (c = Failed ∧ σ2 = (r, m, mu)) as (-> & ->).
        {
          unfold is_cap in Hr2v.
          destruct_word r2v; by simplify_pair_eq.
@@ -410,7 +410,7 @@ Section cap_lang_rules.
     destruct Hspec as [ | * Hfail ].
      { (* Success *)
        iApply "Hφ".
-       destruct H3 as [Hrr2 _]. simplify_map_eq.
+       destruct H4 as [Hrr2 _]. simplify_map_eq.
        iDestruct (memMap_resource_2gen_d_dq with "[Hmem]") as "[Hpc_a Ha]".
        {iExists mem,dfracs; iSplitL; auto. }
        incrementPC_inv.
@@ -552,7 +552,7 @@ Section cap_lang_rules.
     destruct Hspec as [ | * Hfail ].
      { (* Success *)
        iApply "Hφ".
-       destruct H3 as [Hrr2 _]. simplify_map_eq.
+       destruct H4 as [Hrr2 _]. simplify_map_eq.
        rewrite -memMap_resource_1_dq.
        incrementPC_inv.
        simplify_map_eq.
@@ -561,7 +561,7 @@ Section cap_lang_rules.
      { (* Failure (contradiction) *)
        destruct Hfail; try incrementPC_inv; simplify_map_eq; eauto.
        apply isCorrectPC_ra_wb in Hvpc. apply andb_prop_elim in Hvpc as [Hra Hwb].
-       destruct o; apply Is_true_false in H3. all: try congruence. done.
+       destruct o; apply Is_true_false in H4. all: try congruence. done.
      }
   Qed.
 

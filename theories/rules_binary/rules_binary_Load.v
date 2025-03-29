@@ -227,7 +227,7 @@ Section cap_lang_spec_rules.
     destruct Hspec as [ | * Hfail ].
      { (* Success *)
        (* FIXME: fragile *)
-       destruct H4 as [Hrr2 _]. simplify_map_eq_alt.
+       destruct H5 as [Hrr2 _]. simplify_map_eq_alt.
        iDestruct (memMap_resource_2gen_d with "[Hmem]") as "[Hpc_a Ha]".
        {iExists mem; iSplitL; auto. }
        incrementPC_inv.

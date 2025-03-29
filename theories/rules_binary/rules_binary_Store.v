@@ -205,7 +205,7 @@ Section cap_lang_spec_rules.
     destruct Hspec.
      { (* Success *)
        iFrame.
-       destruct H4 as [Hrr2 _]. simplify_map_eq_alt.
+       destruct H5 as [Hrr2 _]. simplify_map_eq_alt.
        rewrite insert_commute // insert_insert.
        iDestruct (rules_binary_base.memMap_resource_2ne with "Hmem") as "[Hpc_a Ha]";auto.
        incrementPC_inv. simpl in *.

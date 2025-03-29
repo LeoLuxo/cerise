@@ -5,7 +5,7 @@ From iris.algebra Require Import frac.
 From cap_machine Require Export rules_base.
 
 Section cap_lang_rules.
-  Context `{memG Σ, regG Σ}.
+  Context `{memG Σ, regG Σ, mmuG Σ}.
   Context `{MachineParameters}.
   Implicit Types P Q : iProp Σ.
   Implicit Types σ : ExecConf.
@@ -17,6 +17,7 @@ Section cap_lang_rules.
   Implicit Types w : Word.
   Implicit Types reg : gmap RegName Word.
   Implicit Types ms : gmap PhysAddr Word.
+  Implicit Types mmu : gmap Asid PhysAddr.
 
   (* Generalized denote function, since multiple cases result in similar success *)
   Definition denote (i: instr) (w : Word): option Z :=
@@ -139,8 +140,8 @@ Section cap_lang_rules.
   Proof.
     iIntros (Hdecode Hinstr Hvpc HPC Dregs φ) "(>Hpc_a & >Hmap) Hφ".
     iApply wp_lift_atomic_base_step_no_fork; auto.
-    iIntros (σ1 ns l1 l2 nt) "Hσ1 /=". destruct σ1; simpl.
-    iDestruct "Hσ1" as "[Hr Hm]".
+    iIntros (σ1 ns l1 l2 nt) "Hσ1 /=". destruct σ1 as [[r m] mu]; simpl.
+    iDestruct "Hσ1" as "[[Hm Hr] Hmu]".
     iPoseProof (gen_heap_valid_inclSepM with "Hr Hmap") as "#H".
     iDestruct "H" as %Hregs.
     have ? := lookup_weaken _ _ _ _ HPC Hregs.
@@ -158,14 +159,14 @@ Section cap_lang_rules.
     destruct (Hri dst) as [wdst [H'dst Hdst]]. by set_solver+.
     destruct (denote get_i wsrc) as [z | ] eqn:Hwsrc.
     2 : { (* Failure: src is not of the right word type *)
-      assert (c = Failed ∧ σ2 = (r, m)) as (-> & ->).
+      assert (c = Failed ∧ σ2 = (r, m, mu)) as (-> & ->).
       { destruct_or! Hinstr; rewrite Hinstr in Hstep; cbn in Hstep.
         all: rewrite Hsrc /= in Hstep.
         all : destruct wsrc as [ | [  |  ] | ]; try (inversion Hstep; auto);
           rewrite /denote /= in Hwsrc; rewrite Hinstr in Hwsrc; congruence. }
       rewrite Hdecode. iFailWP "Hφ" Get_fail_src_denote. }
 
-    assert (exec_opt get_i (r, m) = updatePC (update_reg (r, m) dst (WInt z))) as HH.
+    assert (exec_opt get_i (r, m, mu) = updatePC (update_reg (r, m, mu) dst (WInt z))) as HH.
     { destruct_or! Hinstr; clear Hdecode; subst get_i; cbn in Hstep |- *.
       all: rewrite /update_reg Hsrc /= in Hstep |-*; auto.
       all : destruct wsrc as [ | [  |  ] | ]; inversion Hwsrc; auto.
@@ -175,7 +176,7 @@ Section cap_lang_rules.
     destruct (incrementPC (<[ dst := WInt z ]> regs))
       as [regs'|] eqn:Hregs'; pose proof Hregs' as H'regs'; cycle 1.
     { (* Failure: incrementing PC overflows *)
-      apply incrementPC_fail_updatePC with (m:=m) in Hregs'.
+      apply incrementPC_fail_updatePC with (m:=m) (mu:=mu) in Hregs'.
       eapply updatePC_fail_incl with (m':=m) in Hregs'.
       2: by apply lookup_insert_is_Some'; eauto.
       2: by apply insert_mono; eauto.
@@ -191,6 +192,7 @@ Section cap_lang_rules.
     iMod ((gen_heap_update_inSepM _ _ dst) with "Hr Hmap") as "[Hr Hmap]"; eauto.
     iMod ((gen_heap_update_inSepM _ _ PC) with "Hr Hmap") as "[Hr Hmap]"; eauto.
     iFrame. iModIntro. iApply "Hφ". iFrame. iPureIntro. econstructor; eauto.
+  Unshelve. all: auto.
   Qed.
 
   (* Note that other cases than WCap in the PC are irrelevant, as that will result in having an incorrect PC *)

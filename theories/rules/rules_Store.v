@@ -5,7 +5,7 @@ From iris.algebra Require Import frac.
 From cap_machine Require Export rules_base.
 
 Section cap_lang_rules.
-  Context `{memG Σ, regG Σ}.
+  Context `{memG Σ, regG Σ, mmuG Σ}.
   Context `{MachineParameters}.
   Implicit Types P Q : iProp Σ.
   Implicit Types σ : ExecConf.
@@ -174,7 +174,7 @@ Section cap_lang_rules.
 
      destruct (is_cap r1v) eqn:Hr1v.
      2: { (* Failure: r1 is not a capability *)
-       assert (c = Failed ∧ σ2 = (r, m)) as (-> & ->).
+       assert (c = Failed ∧ σ2 = (r, m, mu)) as (-> & ->).
        {
          unfold is_cap in Hr1v.
          destruct_word r1v; by simplify_pair_eq.
@@ -251,7 +251,7 @@ Section cap_lang_rules.
     destruct Hspec.
      { (* Success *)
        iApply "Hφ".
-       destruct H3 as [Hrr2 _]. simplify_map_eq.
+       destruct H4 as [Hrr2 _]. simplify_map_eq.
        rewrite memMap_resource_1.
        incrementPC_inv.
        simplify_map_eq.
@@ -260,7 +260,7 @@ Section cap_lang_rules.
      { (* Failure (contradiction) *)
        destruct X; try incrementPC_inv; simplify_map_eq; eauto.
        apply isCorrectPC_ra_wb in Hvpc. apply andb_prop_elim in Hvpc as [_ Hwb].
-       destruct o; last apply Is_true_false in H2. all:try congruence. done.
+       destruct o; last apply Is_true_false in H3. all:try congruence. done.
      }
    Qed.
 
@@ -294,7 +294,7 @@ Section cap_lang_rules.
     destruct Hspec.
      { (* Success *)
        iApply "Hφ".
-       destruct H4 as [Hrr2 _]. simplify_map_eq.
+       destruct H5 as [Hrr2 _]. simplify_map_eq.
        rewrite memMap_resource_1.
        incrementPC_inv.
        simplify_map_eq.
@@ -303,7 +303,7 @@ Section cap_lang_rules.
      { (* Failure (contradiction) *)
        destruct X; try incrementPC_inv; simplify_map_eq; eauto.
        apply isCorrectPC_ra_wb in Hvpc. apply andb_prop_elim in Hvpc as [_ Hwb].
-       destruct o; last apply Is_true_false in H3. congruence. done. congruence.
+       destruct o; last apply Is_true_false in H4. congruence. done. congruence.
      }
     Qed.
 
@@ -334,7 +334,7 @@ Section cap_lang_rules.
     destruct Hspec.
      { (* Success *)
        iApply "Hφ".
-       destruct H3 as [Hrr2 _]. simplify_map_eq.
+       destruct H4 as [Hrr2 _]. simplify_map_eq.
        rewrite memMap_resource_1.
        incrementPC_inv.
        simplify_map_eq.
@@ -343,7 +343,7 @@ Section cap_lang_rules.
       { (* Failure (contradiction) *)
        destruct X; try incrementPC_inv; simplify_map_eq; eauto.
        apply isCorrectPC_ra_wb in Hvpc. apply andb_prop_elim in Hvpc as [_ Hwb].
-       destruct o; last apply Is_true_false in H2. congruence. done. congruence.
+       destruct o; last apply Is_true_false in H3. congruence. done. congruence.
      }
     Qed.
 
@@ -377,7 +377,7 @@ Section cap_lang_rules.
     destruct Hspec.
      { (* Success *)
        iApply "Hφ".
-       destruct H4 as [Hrr2 _]. simplify_map_eq.
+       destruct H5 as [Hrr2 _]. simplify_map_eq.
        rewrite memMap_resource_1.
        incrementPC_inv.
        simplify_map_eq.
@@ -533,7 +533,7 @@ Section cap_lang_rules.
     destruct Hspec.
      { (* Success *)
        iApply "Hφ".
-       destruct H4 as [Hrr2 _]. simplify_map_eq.
+       destruct H5 as [Hrr2 _]. simplify_map_eq.
        rewrite memMap_resource_1.
        incrementPC_inv.
        simplify_map_eq.
@@ -577,7 +577,7 @@ Section cap_lang_rules.
     destruct Hspec.
      { (* Success *)
        iApply "Hφ".
-       destruct H6 as [Hrr2 _]. simplify_map_eq.
+       destruct H7 as [Hrr2 _]. simplify_map_eq.
        rewrite memMap_resource_1.
        incrementPC_inv.
        simplify_map_eq.

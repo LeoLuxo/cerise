@@ -5,7 +5,7 @@ From iris.algebra Require Import frac.
 From cap_machine Require Export rules_base.
 
 Section cap_lang_rules.
-  Context `{memG Σ, regG Σ}.
+  Context `{memG Σ, regG Σ, mmuG Σ}.
   Context `{MachineParameters}.
   Implicit Types P Q : iProp Σ.
   Implicit Types σ : ExecConf.
@@ -50,8 +50,8 @@ Section cap_lang_rules.
   Proof.
     iIntros (Hinstr Hvpc HPC Dregs φ) "(>Hpc_a & >Hmap) Hφ".
     iApply wp_lift_atomic_base_step_no_fork; auto.
-    iIntros (σ1 ns l1 l2 nt) "Hσ1 /=". destruct σ1; simpl.
-    iDestruct "Hσ1" as "[Hr Hm]".
+    iIntros (σ1 ns l1 l2 nt) "Hσ1 /=". destruct σ1 as [[r m] mu]; simpl.
+    iDestruct "Hσ1" as "[[Hm Hr] Hmu]".
     iDestruct (gen_heap_valid_inclSepM with "Hr Hmap") as %Hregs.
     have ? := lookup_weaken _ _ _ _ HPC Hregs.
     iDestruct (@gen_heap_valid with "Hm Hpc_a") as %Hpc_a; auto.
@@ -74,17 +74,18 @@ Section cap_lang_rules.
       iFrame. iApply "Hφ". iFrame. iPureIntro. econstructor 3; eauto. }
 
     destruct (incrementPC regs) eqn:HX; pose proof HX as H'X; cycle 1.
-    { apply incrementPC_fail_updatePC with (m:=m) in HX.
+    { apply incrementPC_fail_updatePC with (m:=m) (mu:=mu) in HX.
       eapply updatePC_fail_incl with (m':=m) in HX; eauto.
       rewrite HX in Hstep. inv Hstep.
       iFrame. iApply "Hφ". iFrame. iPureIntro; econstructor; eauto. }
 
-    destruct (incrementPC_success_updatePC _ m _ HX)
+    destruct (incrementPC_success_updatePC _ m mu _ HX)
       as (asid' & p' & g' & b' & e' & a'' & a_pc' & HPC'' & HuPC & ->).
     eapply updatePC_success_incl with (m':=m) in HuPC; eauto. rewrite HuPC in Hstep.
     simplify_pair_eq.
     iMod ((gen_heap_update_inSepM _ _ PC) with "Hr Hmap") as "[Hr Hmap]"; eauto.
     iFrame. iApply "Hφ". iFrame. iPureIntro. econstructor 2; eauto.
+  Unshelve. all: auto.
   Qed.
 
   Lemma wp_jnz_success_jmp E r1 r2 pc_asid pc_p pc_b pc_e pc_a w w1 w2 :

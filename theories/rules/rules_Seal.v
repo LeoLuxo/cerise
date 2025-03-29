@@ -5,7 +5,7 @@ From iris.algebra Require Import frac.
 From cap_machine Require Export rules_base.
 
 Section cap_lang_rules.
-  Context `{memG Σ, regG Σ}.
+  Context `{memG Σ, regG Σ, mmuG Σ}.
   Context `{MachineParameters}.
   Implicit Types P Q : iProp Σ.
   Implicit Types σ : ExecConf.
@@ -65,8 +65,8 @@ Section cap_lang_rules.
   Proof.
     iIntros (Hinstr Hvpc HPC Dregs φ) "(>Hpc_a & >Hmap) Hφ".
     iApply wp_lift_atomic_base_step_no_fork; auto.
-    iIntros (σ1 ns l1 l2 nt) "Hσ1 /=". destruct σ1; simpl.
-    iDestruct "Hσ1" as "[Hr Hm]".
+    iIntros (σ1 ns l1 l2 nt) "Hσ1 /=". destruct σ1 as [[r m] mu]; simpl.
+    iDestruct "Hσ1" as "[[Hm Hr] Hmu]".
     iDestruct (gen_heap_valid_inclSepM with "Hr Hmap") as %Hregs.
     have ? := lookup_weaken _ _ _ _ HPC Hregs.
     iDestruct (@gen_heap_valid with "Hm Hpc_a") as %Hpc_a; auto.
@@ -86,7 +86,7 @@ Section cap_lang_rules.
     (* Now we start splitting on the different cases in the Seal spec, and prove them one at a time *)
      destruct (is_sealr r1v) eqn:Hr1v.
      2:{ (* Failure: r2 is not a sealrange *)
-       assert (c = Failed ∧ σ2 = (r, m)) as (-> & ->).
+       assert (c = Failed ∧ σ2 = (r, m, mu)) as (-> & ->).
        {
          unfold is_sealr in Hr1v.
          destruct_word r1v; by simplify_pair_eq.
@@ -97,7 +97,7 @@ Section cap_lang_rules.
 
      destruct (is_sealb r2v) eqn:Hr2v.
      2:{ (* Failure: r2 is not a sealrange *)
-       assert (c = Failed ∧ σ2 = (r, m)) as (-> & ->).
+       assert (c = Failed ∧ σ2 = (r, m, mu)) as (-> & ->).
        {
          unfold is_sealed in Hr2v.
          destruct_word r2v; by simplify_pair_eq.

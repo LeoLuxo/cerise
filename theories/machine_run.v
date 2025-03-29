@@ -13,7 +13,7 @@ Fixpoint machine_run `{MachineParameters} (fuel: nat) (c: Conf): option ConfFlag
     | (Failed, _) => Some Failed
     | (Halted, _) => Some Halted
     | (NextI, φ) => machine_run fuel (Executable, φ)
-    | (Executable, (r, m)) =>
+    | (Executable, (r, m, mu)) =>
       match r !! PC with
       | None => Some Failed
       | Some pc =>
@@ -26,7 +26,7 @@ Fixpoint machine_run `{MachineParameters} (fuel: nat) (c: Conf): option ConfFlag
           | None => Some Failed
           | Some wa =>
               let i := decodeInstrW wa in
-              let c' := exec i (r, m) in
+              let c' := exec i (r, m, mu) in
               machine_run fuel (c'.1, c'.2)
           end
         ) else (
@@ -44,7 +44,7 @@ Lemma machine_run_correct `{MachineParameters} fuel cf (φ: ExecConf) cf':
 Proof.
   revert cf cf' φ. induction fuel.
   { cbn. done. }
-  { cbn. intros ? ? [r m] Hc.
+  { cbn. intros ? ? [[r m] mu] Hc.
     destruct cf; simplify_eq.
     destruct (r !! PC) as [wpc | ] eqn:HePC.
     2: {

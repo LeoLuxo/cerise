@@ -565,8 +565,8 @@ Section cap_lang_rules.
     intros *. intros Hnpc.
     iIntros (ϕ) "HPC Hϕ".
     iApply wp_lift_atomic_base_step_no_fork; auto.
-    iIntros (σ1 nt l1 l2 ns) "Hσ1 /="; destruct σ1 as [[? ?] ?]. simpl. 
-    iDestruct "Hσ1" as "[[Hm Hr] Hm0]".
+    iIntros (σ1 nt l1 l2 ns) "Hσ1 /="; destruct σ1 as [[r m] mu]. simpl. 
+    iDestruct "Hσ1" as "[[Hm Hr] Hmu]".
     iDestruct (@gen_heap_valid with "Hr HPC") as %?.
     iApply fupd_frame_l.
     iSplit. by iPureIntro; apply normal_always_base_reducible.
@@ -619,8 +619,8 @@ Section cap_lang_rules.
     intros Hinstr Hvpc.
     iIntros (φ) "[Hpc Hpca] Hφ".
     iApply wp_lift_atomic_base_step_no_fork; auto.
-    iIntros (σ1 ns l1 l2 nt) "Hσ1 /=". destruct σ1 as [[? ?] ?]; simpl.
-    iDestruct "Hσ1" as "[[Hm Hr] Hm0]".
+    iIntros (σ1 ns l1 l2 nt) "Hσ1 /=". destruct σ1 as [[r m] mu]; simpl.
+    iDestruct "Hσ1" as "[[Hm Hr] Hmu]".
     iDestruct (@gen_heap_valid with "Hr Hpc") as %?.
     iDestruct (@gen_heap_valid with "Hm Hpca") as %?.
     iModIntro.
@@ -643,8 +643,8 @@ Section cap_lang_rules.
     intros Hinstr Hvpc.
     iIntros (φ) "[Hpc Hpca] Hφ".
     iApply wp_lift_atomic_base_step_no_fork; auto.
-    iIntros (σ1 ns l1 l2 nt) "Hσ1 /=". destruct σ1 as [[? ?] ?]; simpl.
-    iDestruct "Hσ1" as "[[Hm Hr] Hm0]".
+    iIntros (σ1 ns l1 l2 nt) "Hσ1 /=". destruct σ1 as [[r m] mu]; simpl.
+    iDestruct "Hσ1" as "[[Hm Hr] Hmu]".
     iDestruct (@gen_heap_valid with "Hr Hpc") as %?.
     iDestruct (@gen_heap_valid with "Hm Hpca") as %?.
     iModIntro.

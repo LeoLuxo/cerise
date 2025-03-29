@@ -5,7 +5,7 @@ From iris.algebra Require Import frac.
 From cap_machine Require Export rules_base.
 
 Section cap_lang_rules.
-  Context `{HM: memG Σ, HR: regG Σ}.
+  Context `{HM: memG Σ, HR: regG Σ, HMU: mmuG Σ}.
   Context `{MachineParameters}.
   Implicit Types P Q : iProp Σ.
   Implicit Types σ : ExecConf.
@@ -86,8 +86,8 @@ Section cap_lang_rules.
    Proof.
      iIntros (Hinstr Hvpc HPC Dregs φ) "(>Hpc_a & >Hmap) Hφ".
      iApply wp_lift_atomic_base_step_no_fork; auto.
-     iIntros (σ1 ns l1 l2 nt) "Hσ1 /=". destruct σ1; simpl.
-     iDestruct "Hσ1" as "[Hr Hm]".
+     iIntros (σ1 ns l1 l2 nt) "Hσ1 /=". destruct σ1 as [[r m] mu]; simpl.
+     iDestruct "Hσ1" as "[[Hm Hr] Hmu]".
      iDestruct (gen_heap_valid_inclSepM with "Hr Hmap") as %Hregs.
      pose proof (lookup_weaken _ _ _ _ HPC Hregs).
      iDestruct (@gen_heap_valid with "Hm Hpc_a") as %Hpc_a; auto.
@@ -110,7 +110,7 @@ Section cap_lang_rules.
        odestruct (Hri r0) as [r0v [Hr'0 Hr0]].
        { unfold regs_of_argument. set_solver+. }
        rewrite Hr0 Hr'0 in Harg Hstep.
-       assert (c = Failed ∧ σ2 = (r, m)) as (-> & ->).
+       assert (c = Failed ∧ σ2 = (r, m, mu)) as (-> & ->).
        { destruct_word r0v; cbn in Hstep; try congruence; by simplify_pair_eq. }
        iFailWP "Hφ" Lea_fail_rv_nonconst. }
      apply (z_of_arg_mono _ r) in Harg; auto. rewrite Harg in Hstep; cbn in Hstep.
@@ -118,7 +118,7 @@ Section cap_lang_rules.
      destruct (is_mutable_range r1v) eqn:Hr1v.
      2: { (* Failure: r1v is not of the right type *)
        unfold is_mutable_range in Hr1v.
-       assert (c = Failed ∧ σ2 = (r, m)) as (-> & ->).
+       assert (c = Failed ∧ σ2 = (r, m, mu)) as (-> & ->).
        { destruct r1v as [ | [asid p b e a | ] | ]; try by inversion Hr1v.
          all: try by simplify_pair_eq.
          destruct p; try congruence.
@@ -135,7 +135,7 @@ Section cap_lang_rules.
 
        destruct (a + argz)%va as [ a' |] eqn:Hoffset; cycle 1.
        { (* Failure: offset is too large *)
-         assert (c = Failed ∧ σ2 = (r, m)) as (-> & ->)
+         assert (c = Failed ∧ σ2 = (r, m, mu)) as (-> & ->)
              by (destruct p; inversion Hstep; auto).
          iFailWP "Hφ" Lea_fail_overflow_cap. }
 
@@ -147,8 +147,8 @@ Section cap_lang_rules.
          { eapply incrementPC_overflow_mono; first eapply Hregs'.
              by rewrite lookup_insert_is_Some'; eauto.
                by apply insert_mono; eauto. }
-         apply (incrementPC_fail_updatePC _ m) in HH. rewrite HH in Hstep.
-         assert (c = Failed ∧ σ2 = (r, m)) as (-> & ->)
+         apply (incrementPC_fail_updatePC _ m mu) in HH. rewrite HH in Hstep.
+         assert (c = Failed ∧ σ2 = (r, m, mu)) as (-> & ->)
              by (destruct p; inversion Hstep; auto).
          iFailWP "Hφ" Lea_fail_overflow_PC_cap. }
 
@@ -169,7 +169,7 @@ Section cap_lang_rules.
     (* Now, the case where r1v is a sealrange *)
      + destruct (a + argz)%ot as [ a' |] eqn:Hoffset; cycle 1.
        { (* Failure: offset is too large *)
-         assert (c = Failed ∧ σ2 = (r, m)) as (-> & ->)
+         assert (c = Failed ∧ σ2 = (r, m, mu)) as (-> & ->)
              by (destruct p; inversion Hstep; auto).
          iFailWP "Hφ" Lea_fail_overflow_sr. }
 
@@ -181,8 +181,8 @@ Section cap_lang_rules.
          { eapply incrementPC_overflow_mono; first eapply Hregs'.
              by rewrite lookup_insert_is_Some'; eauto.
                by apply insert_mono; eauto. }
-         apply (incrementPC_fail_updatePC _ m) in HH. rewrite HH in Hstep.
-         assert (c = Failed ∧ σ2 = (r, m)) as (-> & ->)
+         apply (incrementPC_fail_updatePC _ m mu) in HH. rewrite HH in Hstep.
+         assert (c = Failed ∧ σ2 = (r, m, mu)) as (-> & ->)
              by (destruct p; inversion Hstep; auto).
          iFailWP "Hφ" Lea_fail_overflow_PC_sr. }
 
