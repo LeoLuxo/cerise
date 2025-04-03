@@ -4,7 +4,7 @@ From iris.base_logic Require Import invariants.
 From iris.program_logic Require Import adequacy.
 Require Import Eqdep_dec.
 From cap_machine Require Import stdpp_extra iris_extra cap_lang
-     region rules_base rules rules_binary rules_binary_base.
+     region rules_base rules.
 From cap_machine.proofmode Require Import disjoint_regions_tactics.
 
 Definition mkregion (r_start r_end: PhysAddr) (contents: list Word): gmap PhysAddr Word :=
@@ -159,7 +159,7 @@ Proof. Admitted.
     iFrame. iApply (IHl with "H"). solve_addr. }
 Qed. *)
 
-Lemma mkregion_prepare `{memG Σ} (a e: PhysAddr) l :
+(* Lemma mkregion_prepare `{memG Σ} (a e: PhysAddr) l :
   (a + length l)%pa = Some e →
   ⊢ ([∗ map] k↦v ∈ mkregion a e l, k ↦ₐ v) ==∗ ([∗ list] k;v ∈ (seq_between_phys a e); l, k ↦ₐ v).
 Proof.
@@ -171,7 +171,7 @@ Lemma mkregion_prepare_spec `{cfgSG Σ} (a e: PhysAddr) l :
   ⊢ ([∗ map] k↦v ∈ mkregion a e l, k ↣ₐ v) ==∗ ([∗ list] k;v ∈ (seq_between_phys a e); l, k ↣ₐ v).
 Proof.
   iIntros (?) "H". iDestruct (mkregion_sepM_to_sepL2 with "H") as "H"; auto.
-Qed.
+Qed. *)
 
 
 Lemma mkregion_sepM_to_sepL2_zip `{Σ: gFunctors} (a e: PhysAddr) l l' (φ φ': PhysAddr → Word → iProp Σ) :
@@ -207,7 +207,7 @@ Proof. Admitted.
     iFrame. iApply (IHl with "H H'"). solve_addr. solve_addr. }
 Qed. *)
 
-Lemma mbkregion_prepare `{memG Σ, cfgSG Σ} (a e : PhysAddr) l l' :
+(* Lemma mbkregion_prepare `{memG Σ, cfgSG Σ} (a e : PhysAddr) l l' :
   (a + length l)%pa = Some e →
   (a + length l')%pa = Some e →
   ([∗ map] k↦v ∈ mkregion a e l, k ↦ₐ v) -∗
@@ -215,4 +215,4 @@ Lemma mbkregion_prepare `{memG Σ, cfgSG Σ} (a e : PhysAddr) l l' :
   ([∗ map] k↦v ∈ mbkregion a e l l', k ↦ₐ v.1 ∗ k ↣ₐ v.2).
 Proof.
   iIntros (? ?) "H H'". iDestruct (mkregion_sepM_to_sepL2_zip with "H H'") as "H"; auto.
-Qed.
+Qed. *)

@@ -193,133 +193,6 @@ Section region.
        rewrite (_: finz.dist b e - finz.dist b a = finz.dist a e)...
    Qed. *)
 
-   (*--------------------------------------------------------------------------*)
-
-  Definition region_pointsto_spec (b e : PhysAddr) (ws : list Word) : iProp Σ :=
-    ([∗ list] k↦y1;y2 ∈ (seq_between_phys b e);ws, y1 ↣ₐ y2)%I.
-
-  Lemma pointsto_decomposition_spec:
-    forall l1 l2 ws1 ws2,
-      length l1 = length ws1 ->
-      ([∗ list] k ↦ y1;y2 ∈ (l1 ++ l2);(ws1 ++ ws2), y1 ↣ₐ y2)%I ⊣⊢
-      ([∗ list] k ↦ y1;y2 ∈ l1;ws1, y1 ↣ₐ y2)%I ∗ ([∗ list] k ↦ y1;y2 ∈ l2;ws2, y1 ↣ₐ y2)%I.
-  Proof. intros. rewrite big_sepL2_app' //. Qed.
-
-  Lemma extract_from_region_spec b e a ws φ :
-    let n := length (seq_between_phys b a) in
-    (b <= a ∧ a < e)%pa →
-    (region_pointsto_spec b e ws ∗ ([∗ list] w ∈ ws, φ w)) ⊣⊢
-     (∃ w,
-        ⌜ws = take n ws ++ (w::drop (S n) ws)⌝
-        ∗ region_pointsto_spec b a (take n ws)
-        ∗ ([∗ list] w ∈ (take n ws), φ w)
-        ∗ a ↣ₐ w ∗ φ w
-        ∗ region_pointsto_spec (a^+1)%pa e (drop (S n) ws)
-        ∗ ([∗ list] w ∈ (drop (S n) ws), φ w)%I).
-  Proof. Admitted.
-    (* intros. iSplit.
-    - iIntros "[A B]". unfold region_pointsto_spec.
-      iDestruct (big_sepL2_length with "A") as %Hlen.
-      rewrite (finz_seq_between_decomposition b a e) //.
-      assert (Hlnws: n = length (take n ws)).
-      { rewrite length_take. rewrite Nat.min_l; auto.
-        rewrite <- Hlen. subst n. rewrite !finz_seq_between_length /finz.dist.
-        solve_addr. }
-      generalize (take_drop n ws). intros HWS.
-      rewrite <- HWS. simpl.
-      iDestruct "B" as "[HB1 HB2]".
-      iDestruct (pointsto_decomposition_spec _ _ _ _ Hlnws with "A") as "[HA1 HA2]".
-      case_eq (drop n ws); intros.
-      + auto.
-      + iDestruct "HA2" as "[HA2 HA3]".
-        iDestruct "HB2" as "[HB2 HB3]".
-        generalize (drop_S' _ _ _ _ _ H3). intros Hdws.
-        rewrite <- H3. rewrite HWS. rewrite Hdws.
-        iExists w. iFrame. by rewrite <- H3.
-    - iIntros "A". iDestruct "A" as (w Hws) "[A1 [B1 [A2 [B2 AB]]]]".
-      unfold region_pointsto_spec. rewrite (finz_seq_between_decomposition b a e) //.
-      iDestruct "AB" as "[A3 B3]".
-      rewrite {5}Hws. iFrame. rewrite {3}Hws. iFrame.
-  Qed. *)
-
-  Lemma extract_from_region_spec' b e a ws φ `{!∀ x, Persistent (φ x)}:
-    let n := length (seq_between_phys b a) in
-    (b <= a ∧ a < e)%pa →
-    (region_pointsto_spec b e ws ∗ ([∗ list] w ∈ ws, φ w)) ⊣⊢
-     (∃ w,
-        ⌜ws = take n ws ++ (w::drop (S n) ws)⌝
-        ∗ region_pointsto_spec b a (take n ws)
-        ∗ ([∗ list] w ∈ ws, φ w)
-        ∗ a ↣ₐ w ∗ φ w
-        ∗ region_pointsto_spec (a^+1)%pa e (drop (S n) ws))%I.
-  Proof.
-    intros. iSplit.
-    - iIntros "H".
-      iDestruct (extract_from_region_spec with "H") as (w Hws) "(?&?&?&#Hφ&?&?)"; eauto.
-      iExists _. iFrame. iSplitR. iPureIntro. by rewrite {1}Hws //.
-      rewrite {3}Hws. iFrame. iSplit; iApply "Hφ".
-    - iIntros "H". iApply (extract_from_region_spec with "[H]"); eauto.
-      iDestruct "H" as (w Hws) "(?&Hl&?&#Hφ&?)". iExists _. iFrame.
-      iSplitR. iPureIntro. by rewrite {1}Hws //.
-      rewrite {1}Hws. iDestruct (big_sepL_app with "Hl") as "[? ?]".
-      cbn. iFrame.
-  Qed.
-
-  Notation "[[ b , e ]] ↣ₐ [[ ws ]]" := (region_pointsto_spec b e ws)
-            (at level 50, format "[[ b , e ]] ↣ₐ [[ ws ]]") : bi_scope.
-
-  Lemma region_pointsto_cons_spec
-      (b b' e : PhysAddr) (w : Word) (ws : list Word) :
-    (b + 1)%pa = Some b' → (b' <= e)%pa →
-    [[b, e]] ↣ₐ [[ w :: ws ]] ⊣⊢ b ↣ₐ w ∗ [[b', e]] ↣ₐ [[ ws ]].
-  Proof. Admitted.
-    (* intros Hb' Hb'e.
-    rewrite /region_pointsto_spec.
-    rewrite (finz_seq_between_decomposition b b e).
-    2: revert Hb' Hb'e; clear; intros; split; solve_addr.
-    rewrite finz_seq_between_empty /=.
-    2: clear; solve_addr.
-    rewrite (_: (b ^+ 1) = b')%a.
-    2: revert Hb' Hb'e; clear; intros; solve_addr.
-    eauto.
-  Qed. *)
-
-  Lemma region_pointsto_single_spec b e l:
-    (b+1)%pa = Some e →
-    [[b,e]] ↣ₐ [[l]] -∗
-    ∃ v, b ↣ₐ v ∗ ⌜l = [v]⌝.
-  Proof. Admitted.
-    (* iIntros (Hbe) "H". rewrite /region_pointsto_spec finz_seq_between_singleton //.
-    iDestruct (big_sepL2_length with "H") as %Hlen.
-    cbn in Hlen. destruct l as [|x l']; [by inversion Hlen|].
-    destruct l'; [| by inversion Hlen]. iExists x. cbn.
-    iDestruct "H" as "(H & _)". eauto.
-  Qed. *)
-
-  Lemma region_pointsto_split_spec  (b e a : PhysAddr) (w1 w2 : list Word) :
-     (b <= a ∧ a <= e)%pa →
-     (length w1) = (dist_phys b a) →
-     ([[b,e]]↣ₐ[[w1 ++ w2]] ⊣⊢ [[b,a]]↣ₐ[[w1]] ∗ [[a,e]]↣ₐ[[w2]])%I.
-   Proof with try (rewrite /finz.dist; solve_addr). Admitted.
-     (* intros [Hba Hae] Hsize.
-     iSplit.
-     - iIntros "Hbe".
-       rewrite /region_pointsto_spec /finz.seq_between.
-       rewrite (finz_seq_decomposition _ _ (finz.dist b a))...
-       iDestruct (big_sepL2_app' with "Hbe") as "[Hba Ha'b]".
-       + by rewrite finz_seq_length.
-       + iFrame.
-         rewrite (_: (b ^+ finz.dist b a)%a = a)...
-         rewrite (_: finz.dist a e = finz.dist b e - finz.dist b a)...
-         (* todo: turn these two into lemmas *)
-     - iIntros "[Hba Hae]".
-       rewrite /region_pointsto_spec /finz.seq_between. (* todo: use a proper region splitting lemma *)
-       rewrite (finz_seq_decomposition (finz.dist b e) _ (finz.dist b a))...
-       iApply (big_sepL2_app with "Hba [Hae]"); cbn.
-       rewrite (_: (b ^+ finz.dist b a)%a = a)...
-       rewrite (_: finz.dist b e - finz.dist b a = finz.dist a e)...
-   Qed. *)
-
 
 End region.
 
@@ -332,8 +205,8 @@ Global Notation "[[ b , e ]] ⊂ₐ [[ b' , e' ]]" := (included b e b' e')
 Global Notation "a ∈ₐ [[ b , e ]]" := (in_range a b e)
             (at level 50, format "a ∈ₐ [[ b , e ]]") : bi_scope.
 
-Global Notation "[[ b , e ]] ↣ₐ [[ ws ]]" := (region_pointsto_spec b e ws)
-            (at level 50, format "[[ b , e ]] ↣ₐ [[ ws ]]") : bi_scope.
+(* Global Notation "[[ b , e ]] ↣ₐ [[ ws ]]" := (region_pointsto_spec b e ws)
+            (at level 50, format "[[ b , e ]] ↣ₐ [[ ws ]]") : bi_scope. *)
 
 Section codefrag.
   Context {Σ:gFunctors} {memg:memG Σ} {regg:regG Σ}

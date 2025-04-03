@@ -3,7 +3,6 @@ From iris.proofmode Require Import proofmode.
 From iris.base_logic Require Import invariants.
 Require Import Eqdep_dec List.
 From cap_machine Require Import cap_lang region contiguous.
-From cap_machine.rules_binary Require Import rules_binary_base.
 
 Section helpers.
 
@@ -88,11 +87,11 @@ Ltac iEpilogue prog :=
   iNext; iIntros prog; iSimpl;
   iApply wp_pure_step_later;auto;iNext;iIntros "_".
 
-Ltac iEpilogue_both prog :=
+(* Ltac iEpilogue_both prog :=
   iNext; iIntros prog; iSimpl;
   iApply wp_pure_step_later;auto;iNext;iIntros "_";
   iMod (do_step_pure _ [] with "[$Hspec $Hj]") as "Hj";auto;
-  iSimpl in "Hj".
+  iSimpl in "Hj". *)
 
 Ltac iCombinePtrn :=
   iCombine "Hi" "Hprog_done" as "Hprog_done";
